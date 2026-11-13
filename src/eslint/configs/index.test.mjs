@@ -6,81 +6,22 @@ import { ESLint } from 'eslint';
 import { defineConfig } from 'eslint/config';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
-import { createBaseConfig } from '../base-config.mjs';
-import { configs as docsConfigs, createDocsConfig } from '../docs-config.mjs';
-import { ignores } from '../ignores.mjs';
-import plugin, { nodeSupport } from '../index.mjs';
-import { createTestConfig } from '../test-config.mjs';
+import { configs as docsConfigs } from '../docs.mjs';
+import plugin from '../index.mjs';
 
 import { configs } from './index.mjs';
 
-/** One file of each kind the configs treat differently. */
-const FILES = [
-  'src/a.js',
-  'src/a.jsx',
-  'src/a.mjs',
-  'src/a.cjs',
-  'src/a.ts',
-  'src/a.tsx',
-  'src/a.mts',
-  'src/a.d.ts',
-  'src/a.test.tsx',
-  'src/a.spec.ts',
-  'README.md',
-  'docs/page.mdx',
-  'data.json',
-  'tsconfig.json',
-  'settings.json5',
-  'package.json',
-  'packages/node-lib/src/index.ts',
-  'packages/node-lib/package.json',
-];
-
-/** @param {unknown} value */
-function plain(value) {
-  return JSON.parse(
-    JSON.stringify(value, (key, item) => {
-      if (typeof item === 'function') {
-        return `[function ${item.name}]`;
-      }
-      // Parsers and plugins are objects with functions; compare them by name.
-      if (key === 'parser' && item) {
-        return item.meta?.name ?? item.name ?? '[parser]';
-      }
-      return item;
-    }),
-  );
-}
-
-/**
- * What ESLint would use for each file: everything but the plugin objects, which are compared by
- * name.
- * @param {string} cwd
- * @param {import('eslint').Linter.Config[]} config
- */
-async function resolve(cwd, config) {
-  const eslint = new ESLint({ cwd, overrideConfig: config, overrideConfigFile: true });
-  /** @type {Record<string, unknown>} */
-  const result = {};
-  for (const file of FILES) {
-    // eslint-disable-next-line no-await-in-loop -- ESLint caches between calls
-    const resolved = await eslint.calculateConfigForFile(path.join(cwd, file));
-    result[file] = resolved
-      ? plain({
-          language: resolved.language,
-          languageOptions: resolved.languageOptions,
-          plugins: Object.keys(resolved.plugins ?? {}).sort(),
-          processor: Boolean(resolved.processor),
-          // A rule that's off and a rule that's absent behave the same.
-          rules: Object.fromEntries(
-            Object.entries(resolved.rules ?? {}).filter(([, entry]) => entry[0] !== 0),
-          ),
-          settings: resolved.settings,
-        })
-      : 'ignored';
-  }
-  return result;
-}
+/** A file of each kind, with a line that most configs have something to say about. */
+const SAMPLES = {
+  'data.json': '{ "a": 1 }\n',
+  'package.json': '{ "name": "sample", "version": "1.0.0" }\n',
+  'README.md': '# Title\n\nText.\n',
+  'src/a.mjs': "import { b } from './b.mjs';\n\nexport const a = { z: 1, a: b };\n",
+  'src/a.test.tsx': "import { it } from 'vitest';\n\nit('works', () => {});\n",
+  'src/a.ts': 'export const a: { z: number; a: number } = { z: 1, a: 2 };\n',
+  'src/component.tsx':
+    'import * as React from \'react\';\n\nexport function A() {\n  return <img src="a.png" />;\n}\n',
+};
 
 describe('configs', () => {
   /** @type {string} */
@@ -88,105 +29,72 @@ describe('configs', () => {
 
   beforeAll(async () => {
     dir = await fs.mkdtemp(path.join(os.tmpdir(), 'piplup-configs-'));
-    await fs.mkdir(path.join(dir, 'packages/node-lib'), { recursive: true });
     await fs.writeFile(path.join(dir, 'package.json'), '{ "name": "fixture" }');
+    // For the type-aware part of `docs`, which needs a TypeScript project around the files.
     await fs.writeFile(
-      path.join(dir, 'packages/node-lib/package.json'),
-      '{ "name": "node-lib", "engines": { "node": ">=20" } }',
+      path.join(dir, 'tsconfig.json'),
+      JSON.stringify({
+        compilerOptions: { allowJs: true, jsx: 'preserve', module: 'nodenext', noEmit: true },
+        include: ['**/*'],
+      }),
     );
-    await fs.writeFile(path.join(dir, '.gitignore'), 'build\n');
+    // On disk too, since the project service only knows files it can read.
+    await fs.mkdir(path.join(dir, 'src'));
+    await Promise.all(
+      Object.entries(SAMPLES).map(([file, code]) => fs.writeFile(path.join(dir, file), code)),
+    );
   });
 
   afterAll(async () => {
     await fs.rm(dir, { force: true, recursive: true });
   });
 
-  it.each([
-    {
-      expected: () => [],
-      name: 'recommended',
-      options: {},
-    },
-    {
-      expected: () => [configs.reactCompiler],
-      name: 'recommended + reactCompiler',
-      options: { enableReactCompiler: true },
-    },
-    {
-      expected: () => [
-        /** @type {import('eslint').Linter.Config} */ ({
-          rules: {
-            '@typescript-eslint/consistent-type-imports': 'off',
-            'import/consistent-type-specifier-style': 'off',
-          },
-        }),
-      ],
-      name: 'recommended without consistent type imports',
-      options: { consistentTypeImports: false },
-    },
-    {
-      expected: () => [],
-      name: 'recommended without Markdown',
-      options: { markdown: false },
-    },
-  ])(
-    'resolves like createBaseConfig: $name',
+  it.each(Object.keys({ ...configs, ...docsConfigs }))(
+    'lints with only `%s`, which registers the plugins it needs',
     { timeout: 60_000 },
-    async ({ expected, options }) => {
-      const recommended =
-        'markdown' in options
-          ? configs.recommended.filter(({ name }) => !name?.startsWith('piplup/markdown'))
-          : configs.recommended;
-      const before = await resolve(
-        dir,
-        defineConfig(createBaseConfig({ baseDirectory: dir, ...options })),
-      );
-      const after = await resolve(
-        dir,
-        defineConfig(ignores(dir), recommended, nodeSupport(dir), ...expected()),
-      );
-      expect(after).toEqual(before);
+    async (key) => {
+      const config = /** @type {Record<string, import('eslint').Linter.Config[]>} */ ({
+        ...configs,
+        ...docsConfigs,
+      })[key];
+      const eslint = new ESLint({ cwd: dir, overrideConfig: config, overrideConfigFile: true });
+      for (const [file, code] of Object.entries(SAMPLES)) {
+        // eslint-disable-next-line no-await-in-loop -- one file at a time keeps failures readable
+        const [result] = await eslint.lintText(code, { filePath: path.join(dir, file) });
+        const fatal = result.messages.filter((message) => message.fatal && !message.ruleId);
+        expect(fatal, `${key} on ${file}`).toEqual([]);
+      }
     },
   );
 
-  it('keeps the test and docs configs', async () => {
-    const before = await resolve(
-      dir,
-      defineConfig(
-        createBaseConfig({ baseDirectory: dir }),
-        createTestConfig(),
-        createDocsConfig(),
-      ),
-    );
-    const after = await resolve(
-      dir,
-      defineConfig(
-        ignores(dir),
-        configs.recommended,
-        nodeSupport(dir),
-        configs.test,
-        docsConfigs.docs,
-      ),
-    );
-    expect(after).toEqual(before);
-  }, 60_000);
-
   it('names every config object', () => {
-    for (const [key, value] of Object.entries(configs)) {
+    for (const [key, value] of Object.entries({ ...configs, ...docsConfigs })) {
       for (const config of value) {
-        expect(config.name, `${key}: ${JSON.stringify(Object.keys(config))}`).toBeTruthy();
+        expect(config.name, `${key}: ${JSON.stringify(Object.keys(config))}`).toMatch(/^piplup\//);
       }
     }
   });
 
-  it('exposes the configs on the plugin', async () => {
+  it('leaves React Compiler out of `recommended`', () => {
+    const names = new Set(configs.recommended.map(({ name }) => name));
+    expect(names.has('piplup/react-compiler')).toBe(false);
+    expect(names.has('piplup/typescript')).toBe(true);
+  });
+
+  it('exposes the configs on the plugin, which can be registered next to them', async () => {
     expect(plugin.configs.recommended).toBe(configs.recommended);
-    // Registering the plugin yourself next to the configs is the same object, so no conflict.
     const eslint = new ESLint({
       cwd: dir,
-      overrideConfig: defineConfig({ plugins: { piplup: plugin } }, configs.recommended),
+      // ESLint resolves `extends: ['piplup/recommended']` from the plugins of the same object.
+      overrideConfig: defineConfig({
+        extends: ['piplup/recommended'],
+        plugins: { piplup: plugin },
+      }),
       overrideConfigFile: true,
     });
-    await expect(eslint.calculateConfigForFile(path.join(dir, 'src/a.ts'))).resolves.toBeTruthy();
+    const [result] = await eslint.lintText(SAMPLES['src/a.ts'], {
+      filePath: path.join(dir, 'src/a.ts'),
+    });
+    expect(result.messages.map(({ ruleId }) => ruleId)).toContain('perfectionist/sort-objects');
   }, 60_000);
 });

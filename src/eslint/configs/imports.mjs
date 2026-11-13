@@ -3,11 +3,15 @@ import { defineConfig } from 'eslint/config';
 import { configs as importConfigs } from '../../lint/plugins/import.mjs';
 import { EXTENSION_TS } from '../extensions.mjs';
 
+import { languageOptions } from './shared.mjs';
+
 /**
  * eslint-plugin-import rules on top of its recommended, react and typescript configs.
  * @type {import('eslint').Linter.RulesRecord}
  */
 export const rules = {
+  // Keep `import type` separate from value imports, with `@typescript-eslint/consistent-type-imports`.
+  'import/consistent-type-specifier-style': ['error', 'prefer-top-level'],
   // TypeScript extensions handling
   'import/extensions': [
     'error',
@@ -136,6 +140,7 @@ export const config = defineConfig(
   {
     extends: [importConfigs.recommended, importConfigs.react, importConfigs.typescript],
     files: [`**/*${EXTENSION_TS}`],
+    languageOptions,
     name: 'piplup/imports',
     rules,
     settings,

@@ -1,11 +1,12 @@
 import { defineConfig } from 'eslint/config';
 
-import { createBaseConfig } from './src/eslint/base-config.mjs';
 import { EXTENSION_TEST_FILE, EXTENSION_TS } from './src/eslint/extensions.mjs';
-import { createTestConfig } from './src/eslint/test-config.mjs';
+import { configs, ignores, nodeSupport } from './src/eslint/index.mjs';
 
 export default defineConfig(
-  createBaseConfig({ baseDirectory: import.meta.dirname }),
+  ignores(import.meta.dirname),
+  configs.recommended,
+  nodeSupport(import.meta.dirname),
   {
     files: [`**/*${EXTENSION_TS}`],
     rules: {
@@ -24,7 +25,7 @@ export default defineConfig(
     },
   },
   {
-    extends: createTestConfig(),
+    extends: [configs.test],
     files: [`**/*${EXTENSION_TEST_FILE}`],
   },
   {

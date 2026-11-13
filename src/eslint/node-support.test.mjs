@@ -2,11 +2,12 @@ import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
 
 import { ESLint } from 'eslint';
+import { defineConfig } from 'eslint/config';
 import { describe, it, expect } from 'vitest';
 
 import { makeTempDir, writePackage } from '../utils/test-utils.mjs';
 
-import { createBaseConfig, createNodeSupportConfig } from './index.mjs';
+import { configs, nodeSupport } from './index.mjs';
 
 /**
  * Lints `code` as `relativePath` inside a temporary repository that contains a package at
@@ -16,7 +17,7 @@ import { createBaseConfig, createNodeSupportConfig } from './index.mjs';
  * @param {string} code
  * @param {object} [options]
  * @param {string} [options.packageDir]
- * @param {'node-support' | 'base'} [options.config]
+ * @param {'node-support' | 'recommended'} [options.config]
  */
 async function lintInPackage(packageJson, relativePath, code, options = {}) {
   const { config = 'node-support', packageDir = 'packages/my-package' } = options;
@@ -31,9 +32,9 @@ async function lintInPackage(packageJson, relativePath, code, options = {}) {
   const eslint = new ESLint({
     cwd,
     overrideConfig:
-      config === 'base'
-        ? createBaseConfig({ baseDirectory: cwd, markdown: false })
-        : createNodeSupportConfig(cwd),
+      config === 'recommended'
+        ? defineConfig(configs.recommended, nodeSupport(cwd))
+        : nodeSupport(cwd),
     overrideConfigFile: true,
   });
   const [result] = await eslint.lintFiles([filePath]);
@@ -48,7 +49,7 @@ const TIMERS_PROMISES =
   "import { setTimeout } from 'node:timers/promises';\n\nexport const wait = () => setTimeout(1);\n";
 const NODE_14 = { engines: { node: '>=14.0.0' } };
 
-describe('createNodeSupportConfig', () => {
+describe('nodeSupport', () => {
   describe('packages that declare engines.node', () => {
     it('reports ECMAScript built-ins that engines.node does not support', async () => {
       expect(await lintInPackage(NODE_14, 'packages/my-package/src/index.js', HAS_OWN)).toEqual([
@@ -134,7 +135,7 @@ describe('createNodeSupportConfig', () => {
 
     const eslint = new ESLint({
       cwd,
-      overrideConfig: createNodeSupportConfig(baseDirectory),
+      overrideConfig: nodeSupport(baseDirectory),
       overrideConfigFile: true,
     });
     const [result] = await eslint.lintFiles([filePath]);
@@ -149,11 +150,11 @@ describe('createNodeSupportConfig', () => {
     });
   });
 
-  describe('createBaseConfig', () => {
-    it('includes the node support rules', async () => {
+  describe('with configs.recommended', () => {
+    it('still reports', async () => {
       expect(
         await lintInPackage(NODE_14, 'packages/my-package/src/index.js', HAS_OWN, {
-          config: 'base',
+          config: 'recommended',
         }),
       ).toEqual(['n/no-unsupported-features/es-builtins', 'n/no-unsupported-features/es-syntax']);
     });

@@ -4,6 +4,8 @@ import { configs as reactHooksConfigs } from '../../lint/plugins/react-hooks.mjs
 import { configs as reactConfigs } from '../../lint/plugins/react.mjs';
 import { EXTENSION_TS } from '../extensions.mjs';
 
+import { languageOptions } from './shared.mjs';
+
 /**
  * eslint-plugin-react and eslint-plugin-react-hooks rules on top of their recommended configs.
  * @type {import('eslint').Linter.RulesRecord}
@@ -109,6 +111,7 @@ export const rules = {
 export const config = defineConfig({
   extends: [reactConfigs.recommended, reactHooksConfigs.recommended],
   files: [`**/*${EXTENSION_TS}`],
+  languageOptions,
   name: 'piplup/react',
   rules,
 });

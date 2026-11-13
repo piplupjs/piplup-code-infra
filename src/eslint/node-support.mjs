@@ -33,10 +33,11 @@ function findPackageDirsWithEnginesNode(baseDirectory) {
  * built-ins, so all of them reach Node.js consumers as written.
  * Only packages that declare "engines.node", meaning they're intended to run in Node.js, are
  * checked.
+ * A function, because it reads the packages' package.json files.
  * @param {string} baseDirectory - The repository root. File patterns are resolved against it.
  * @returns {import('eslint').Linter.Config[]}
  */
-export function createNodeSupportConfig(baseDirectory) {
+export function nodeSupport(baseDirectory) {
   const packageDirs = findPackageDirsWithEnginesNode(baseDirectory);
   if (packageDirs.length === 0) {
     return [];

@@ -15,8 +15,8 @@
       "default": "./src/eslint/index.mjs"
     },
     "./eslint/docs": {
-      "types": "./build/eslint/docs-config.d.mts",
-      "default": "./src/eslint/docs-config.mjs"
+      "types": "./build/eslint/docs.d.mts",
+      "default": "./src/eslint/docs.mjs"
     },
     "./oxfmt": {
       "types": "./build/oxfmt.d.mts",

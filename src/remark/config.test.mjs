@@ -6,7 +6,7 @@ import { remark } from 'remark';
 import remarkMdx from 'remark-mdx';
 import { describe, it, expect } from 'vitest';
 
-import { createBaseConfig } from '../eslint/base-config.mjs';
+import { configs } from '../eslint/configs/index.mjs';
 import { makeTempDir } from '../utils/test-utils.mjs';
 
 import { createRemarkConfig } from './config.mjs';
@@ -96,7 +96,7 @@ describe('createRemarkConfig with eslint --fix', () => {
     const eslint = new ESLint({
       cwd,
       fix: true,
-      overrideConfig: createBaseConfig({ baseDirectory: cwd }),
+      overrideConfig: configs.recommended,
       overrideConfigFile: true,
     });
     const [result] = await eslint.lintFiles([fileName]);

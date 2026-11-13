@@ -2,21 +2,26 @@ import { defineConfig } from 'eslint/config';
 
 import { configs as nextConfigs } from '../lint/plugins/next.mjs';
 
+import { adjustedPlugins, languageOptions } from './configs/shared.mjs';
 import { EXTENSION_TS } from './extensions.mjs';
 
 /**
- * Lint config for a Next.js docs app. Exported from `@piplup/code-infra/eslint/docs` rather than
- * `@piplup/code-infra/eslint`, so projects without `@next/eslint-plugin-next` can load the base config.
- * @param {Object} [options]
- * @param {string} [options.rootDir] - Directory of the Next.js docs app, relative to the repo root. Defaults to `docs`.
- * @returns {import('eslint').Linter.Config[]}
+ * Configs for a Next.js docs app. Exported from `@piplup/code-infra/eslint/docs` rather than
+ * `@piplup/code-infra/eslint`, so projects without `@next/eslint-plugin-next` can load the others.
  */
-export function createDocsConfig({ rootDir = 'docs' } = {}) {
-  return defineConfig(
-    nextConfigs.recommended,
+export const configs = {
+  /**
+   * The Next.js rules, and type-aware checks of the docs code. Expects the Next.js app in `docs`;
+   * set `settings.next.rootDir` to change that.
+   * @type {import('eslint').Linter.Config[]}
+   */
+  docs: defineConfig(
+    // Not limited to code files: the Next.js rules also check the code in MDX pages.
+    { extends: [nextConfigs.recommended], name: 'piplup/docs/next' },
     {
       files: [`**/*${EXTENSION_TS}`],
       name: 'piplup/docs',
+      plugins: adjustedPlugins,
       rules: {
         'compat/compat': 'off',
         'jsx-a11y/anchor-is-valid': 'off',
@@ -24,7 +29,7 @@ export function createDocsConfig({ rootDir = 'docs' } = {}) {
       },
       settings: {
         next: {
-          rootDir,
+          rootDir: 'docs',
         },
       },
     },
@@ -34,24 +39,17 @@ export function createDocsConfig({ rootDir = 'docs' } = {}) {
       files: [`**/*${EXTENSION_TS}`],
       ignores: ['**/*.config.*', '**/scripts/**'],
       languageOptions: {
+        ...languageOptions,
         parserOptions: {
           projectService: true,
           tsconfigRootDir: process.cwd(),
         },
       },
       name: 'piplup/docs/type-aware',
+      plugins: adjustedPlugins,
       rules: {
         '@typescript-eslint/no-deprecated': 'error',
       },
     },
-  );
-}
-
-/**
- * The docs configs for `@piplup/code-infra/eslint/docs`. `docs` expects the Next.js app in `docs`;
- * set `settings.next.rootDir` to change that.
- */
-export const configs = {
-  /** @type {import('eslint').Linter.Config[]} */
-  docs: createDocsConfig(),
+  ),
 };

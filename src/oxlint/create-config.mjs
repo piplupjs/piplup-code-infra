@@ -8,9 +8,9 @@ import { defineConfig } from 'eslint/config';
 import { globbySync } from 'globby';
 import { minimatch } from 'minimatch';
 
-import { createBaseConfig } from '../eslint/base-config.mjs';
+import { configs } from '../eslint/configs/index.mjs';
 import { EXTENSION_TEST_FILE } from '../eslint/extensions.mjs';
-import { createTestConfig } from '../eslint/test-config.mjs';
+import { nodeSupport } from '../eslint/node-support.mjs';
 
 /**
  * @typedef {import('eslint').Linter.RuleEntry} RuleEntry
@@ -293,8 +293,8 @@ function findNodePackageDirs(baseDirectory) {
 
 /**
  * Builds an oxlint config that runs the same rules, with the same options, as the ESLint config
- * from `@piplup/code-infra/eslint` (`createBaseConfig` plus `createTestConfig` for test files,
- * and `createDocsConfig` when `docs` is set).
+ * from `@piplup/code-infra/eslint`: `configs.recommended` and `nodeSupport()`, `configs.test` for
+ * test files, and `configs.docs` when `docs` is set.
  *
  * oxlint runs a rule natively when it implements it, and otherwise loads the original ESLint
  * plugin through `jsPlugins`. JSON, `package.json` and Markdown files aren't covered: oxlint
@@ -304,10 +304,11 @@ function findNodePackageDirs(baseDirectory) {
  *
  * @param {Object} [options]
  * @param {string} [options.baseDirectory] - The repository root. Defaults to the current directory.
- * @param {boolean} [options.enableReactCompiler] - Same as `createBaseConfig`.
- * @param {boolean} [options.consistentTypeImports] - Same as `createBaseConfig`. Defaults to `true`.
+ * @param {boolean} [options.enableReactCompiler] - Add `configs.reactCompiler`.
+ * @param {boolean} [options.consistentTypeImports] - Keep `import type` separate, as `configs.typescript`
+ * does. Defaults to `true`.
  * @param {{ rootDir?: string } | boolean} [options.docs] - Lint a Next.js docs app like
- * `createDocsConfig`. `true` uses the `docs` directory. Needs `@next/eslint-plugin-next`.
+ * `configs.docs`. `true` uses the `docs` directory. Needs `@next/eslint-plugin-next`.
  * @returns {Promise<OxlintConfig>}
  */
 export async function createOxlintConfig({
@@ -323,19 +324,23 @@ export async function createOxlintConfig({
       : path.posix.join(docsRootDir.replaceAll('\\', '/'), `**/*.${JS_EXTENSIONS}`);
 
   const eslintConfig = defineConfig(
-    createBaseConfig({
-      baseDirectory,
-      consistentTypeImports,
-      enableReactCompiler,
-      markdown: false,
-    }),
-    { extends: createTestConfig(), files: [`**/*${EXTENSION_TEST_FILE}`] },
+    configs.recommended,
+    nodeSupport(baseDirectory),
+    enableReactCompiler ? configs.reactCompiler : [],
+    consistentTypeImports
+      ? []
+      : {
+          rules: {
+            '@typescript-eslint/consistent-type-imports': 'off',
+            'import/consistent-type-specifier-style': 'off',
+          },
+        },
+    { extends: [configs.test], files: [`**/*${EXTENSION_TEST_FILE}`] },
     docsFiles
       ? {
-          extends: (await import('../eslint/docs-config.mjs')).createDocsConfig({
-            rootDir: docsRootDir,
-          }),
+          extends: [(await import('../eslint/docs.mjs')).configs.docs],
           files: [docsFiles],
+          settings: { next: { rootDir: docsRootDir } },
         }
       : [],
   );

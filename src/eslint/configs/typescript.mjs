@@ -115,25 +115,24 @@ export const rules = {
 };
 
 /**
- * Separate `import type` statements. The base config's `consistentTypeImports` option, on by
- * default, turns these on.
+ * Separate `import type` statements. To allow inline `type` imports, turn this off, and
+ * `import/consistent-type-specifier-style` from `imports`.
  * @type {import('eslint').Linter.RulesRecord}
  */
-export const consistentTypeImportsRules = {
+const consistentTypeImportsRules = {
   '@typescript-eslint/consistent-type-imports': [
     'error',
     {
       fixStyle: 'separate-type-imports',
     },
   ],
-  'import/consistent-type-specifier-style': ['error', 'prefer-top-level'],
 };
 
 /**
  * Declaration files describe types only, so `import type` adds nothing there.
  * @type {import('eslint').Linter.Config}
  */
-export const dtsConfig = {
+const dtsConfig = {
   files: [`**/*${EXTENSION_DTS}`],
   name: 'piplup/typescript/dts',
   rules: {

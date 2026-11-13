@@ -3,6 +3,8 @@ import { defineConfig } from 'eslint/config';
 import { configs as reactCompilerConfigs } from '../../lint/plugins/react-compiler.mjs';
 import { EXTENSION_TS } from '../extensions.mjs';
 
+import { languageOptions } from './shared.mjs';
+
 /**
  * React Compiler checks. Opt-in: only for projects that build with React Compiler.
  * @type {import('eslint').Linter.RulesRecord}
@@ -18,6 +20,7 @@ export const rules = {
 export const config = defineConfig({
   extends: [reactCompilerConfigs.recommended],
   files: [`**/*${EXTENSION_TS}`],
+  languageOptions,
   name: 'piplup/react-compiler',
   rules,
 });

@@ -9,9 +9,8 @@ import { ESLint } from 'eslint';
 import { defineConfig } from 'eslint/config';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
-import { createBaseConfig } from '../eslint/base-config.mjs';
+import { configs } from '../eslint/configs/index.mjs';
 import { EXTENSION_TEST_FILE } from '../eslint/extensions.mjs';
-import { createTestConfig } from '../eslint/test-config.mjs';
 
 import { createOxlintConfig, routeRule } from './create-config.mjs';
 
@@ -118,10 +117,10 @@ describe('parity with ESLint', () => {
 
     const eslint = new ESLint({
       cwd: fixtureDir,
-      overrideConfig: defineConfig(
-        createBaseConfig({ baseDirectory: fixtureDir, markdown: false }),
-        { extends: createTestConfig(), files: [`**/*${EXTENSION_TEST_FILE}`] },
-      ),
+      overrideConfig: defineConfig(configs.recommended, {
+        extends: [configs.test],
+        files: [`**/*${EXTENSION_TEST_FILE}`],
+      }),
       overrideConfigFile: true,
     });
     const eslintFindings = new Set();

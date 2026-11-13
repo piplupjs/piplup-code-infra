@@ -4,6 +4,8 @@ import { configs as jsxA11yConfigs } from '../../lint/plugins/jsx-a11y.mjs';
 import { EXTENSION_TS } from '../extensions.mjs';
 import piplupPlugin from '../piplup/index.mjs';
 
+import { languageOptions } from './shared.mjs';
+
 /**
  * eslint-plugin-jsx-a11y rules on top of its recommended config.
  * @type {import('eslint').Linter.RulesRecord}
@@ -71,6 +73,7 @@ export const rules = {
 export const config = defineConfig({
   extends: [jsxA11yConfigs.recommended],
   files: [`**/*${EXTENSION_TS}`],
+  languageOptions,
   name: 'piplup/jsx-a11y',
   plugins: { piplup: piplupPlugin },
   rules,

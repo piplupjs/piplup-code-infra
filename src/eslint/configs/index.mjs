@@ -6,17 +6,18 @@ import globals from 'globals';
 import { configs as compatConfigs } from '../../lint/plugins/compat.mjs';
 import nPlugin from '../../lint/plugins/n.mjs';
 import { EXTENSION_TS } from '../extensions.mjs';
-import { createJsonConfig } from '../json-config.mjs';
-import { createPackageJsonConfig } from '../package-json-config.mjs';
-import { createPerfectionistConfig } from '../perfectionist/base.mjs';
 import piplupPlugin from '../piplup/index.mjs';
-import { baseSpecRules, createTestConfig } from '../test-config.mjs';
 
 import { config as imports } from './imports.mjs';
 import { config as javascript } from './javascript.mjs';
+import { config as json } from './json.mjs';
 import { config as jsxA11y } from './jsx-a11y.mjs';
+import { config as packageJson } from './package-json.mjs';
+import { config as perfectionist } from './perfectionist.mjs';
 import { config as reactCompiler } from './react-compiler.mjs';
 import { config as react } from './react.mjs';
+import { languageOptions } from './shared.mjs';
+import { specConfig as spec, config as test } from './test.mjs';
 import { config as typescript } from './typescript.mjs';
 
 /**
@@ -59,6 +60,7 @@ const base = defineConfig({
 const compat = defineConfig({
   extends: [compatConfigs.recommended],
   files: [`**/*${EXTENSION_TS}`],
+  languageOptions,
   name: 'piplup/compat',
 });
 
@@ -85,15 +87,6 @@ const markdown = defineConfig(
  * @type {import('eslint').Linter.Config[]}
  */
 const prettier = defineConfig({ extends: [prettierConfig], name: 'piplup/prettier' });
-
-/** @type {import('eslint').Linter.Config[]} */
-const json = createJsonConfig();
-/** @type {import('eslint').Linter.Config[]} */
-const packageJson = createPackageJsonConfig();
-/** @type {import('eslint').Linter.Config[]} */
-const perfectionist = createPerfectionistConfig();
-/** @type {import('eslint').Linter.Config[]} */
-const test = createTestConfig();
 
 /**
  * The named configs. Each sets its own `files`, so it can be used on its own, and registers the
@@ -131,9 +124,7 @@ export const configs = {
     compat,
     perfectionist,
   ),
-  /** Relaxed rules for `*.spec.*` files. */
-  spec: defineConfig({ ...baseSpecRules, name: 'piplup/spec' }),
-  /** Vitest and Testing Library. Has no `files`: scope it to your test files. */
+  spec,
   test,
   typescript,
 };

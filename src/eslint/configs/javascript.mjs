@@ -4,6 +4,8 @@ import { defineConfig } from 'eslint/config';
 import { EXTENSION_TS } from '../extensions.mjs';
 import piplupPlugin from '../piplup/index.mjs';
 
+import { languageOptions } from './shared.mjs';
+
 const restrictedMethods = ['setTimeout', 'setInterval', 'clearTimeout', 'clearInterval'];
 
 const restrictedSyntaxRules = restrictedMethods.map((method) => ({
@@ -215,6 +217,7 @@ export const rules = {
 export const config = defineConfig({
   extends: [eslintJs.configs.recommended],
   files: [`**/*${EXTENSION_TS}`],
+  languageOptions,
   name: 'piplup/javascript',
   plugins: { piplup: piplupPlugin },
   rules,
