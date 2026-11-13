@@ -9,6 +9,7 @@ export default defineConfig(
   {
     files: [`**/*${EXTENSION_TS}`],
     rules: {
+      'piplup/filename-case': 'error',
       'compat/compat': 'off',
       'jsx-a11y/control-has-associated-label': 'off',
       'jsx-a11y/no-autofocus': 'off',

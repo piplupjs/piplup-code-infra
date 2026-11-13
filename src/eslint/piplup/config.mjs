@@ -449,6 +449,8 @@ export function createCoreConfig(options = {}) {
         'piplup/add-undef-to-optional': 'off',
         'piplup/consistent-production-guard': 'error',
         'piplup/docgen-ignore-before-comment': 'error',
+        // Opt-in: many React projects name component files in PascalCase.
+        'piplup/filename-case': 'off',
         'piplup/flatten-parentheses': 'warn',
         'piplup/no-guarded-throw': 'error',
         'piplup/no-presentation-role': 'off',

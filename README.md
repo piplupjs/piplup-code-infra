@@ -38,6 +38,16 @@ export default defineConfig(createBaseConfig({ baseDirectory: import.meta.dirnam
 });
 ```
 
+To require kebab-case file names, turn on `piplup/filename-case`. It's off by default because many React projects name component files in PascalCase. Its `ignore` option takes regular expressions for file names to skip:
+
+```js
+{
+  rules: {
+    'piplup/filename-case': ['error', { ignore: ['^[A-Z][A-Za-z]*\\.tsx$'] }],
+  },
+}
+```
+
 `.remarkrc.mjs`:
 
 ```js

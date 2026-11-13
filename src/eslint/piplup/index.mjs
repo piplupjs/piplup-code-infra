@@ -3,6 +3,7 @@ import consistentProductionGuard from './rules/consistent-production-guard.mjs';
 import disallowActiveElementAsKeyEventTarget from './rules/disallow-active-element-as-key-event-target.mjs';
 import disallowReactApiInServerComponents from './rules/disallow-react-api-in-server-components.mjs';
 import docgenIgnoreBeforeComment from './rules/docgen-ignore-before-comment.mjs';
+import filenameCase from './rules/filename-case.mjs';
 import flattenParentheses from './rules/flatten-parentheses.mjs';
 import noFloatingCleanup from './rules/no-floating-cleanup.mjs';
 import noGuardedThrow from './rules/no-guarded-throw.mjs';
@@ -22,6 +23,7 @@ const piplupPlugin = {
     'disallow-active-element-as-key-event-target': disallowActiveElementAsKeyEventTarget,
     'disallow-react-api-in-server-components': disallowReactApiInServerComponents,
     'docgen-ignore-before-comment': docgenIgnoreBeforeComment,
+    'filename-case': filenameCase,
     'no-guarded-throw': noGuardedThrow,
     'no-presentation-role': noPresentationRole,
     'no-restricted-resolved-imports': noRestrictedResolvedImports,
