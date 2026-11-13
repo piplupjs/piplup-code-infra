@@ -9,7 +9,7 @@ import * as prettier from 'prettier';
 import { describe, expect, it } from 'vitest';
 
 import { createOxfmtConfig } from './oxfmt.mjs';
-import { createBaseConfig } from './prettier.mjs';
+import { config, docsOverrides } from './prettier.mjs';
 
 const require = createRequire(import.meta.url);
 const oxfmtBin = path.join(path.dirname(require.resolve('oxfmt/package.json')), 'bin', 'oxfmt');
@@ -31,7 +31,7 @@ describe('createOxfmtConfig', () => {
     const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'oxfmt-parity-'));
     try {
       const files = await fs.readdir(fixtureDir);
-      const prettierConfig = createBaseConfig();
+      const prettierConfig = config;
       /** @type {Record<string, string>} */
       const expected = {};
       for (const file of files) {
@@ -57,6 +57,19 @@ describe('createOxfmtConfig', () => {
       await fs.rm(dir, { force: true, recursive: true });
     }
   }, 60_000);
+
+  it('carries over the options of the Prettier config it gets', () => {
+    const own = {
+      ...config,
+      overrides: [...config.overrides, ...docsOverrides],
+      plugins: ['prettier-plugin-tailwindcss'],
+      semi: false,
+    };
+    const oxfmtConfig = createOxfmtConfig(own);
+    expect(oxfmtConfig).toMatchObject({ overrides: own.overrides, printWidth: 100, semi: false });
+    // oxfmt can't load Prettier plugins.
+    expect(oxfmtConfig).not.toHaveProperty('plugins');
+  });
 
   it("leaves this repository's Prettier-formatted files unchanged", async () => {
     const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'oxfmt-check-'));

@@ -22,11 +22,11 @@ pnpm add -D @piplup/code-infra
 | -------------------------------- | --------------------------------------------------------------------------------------------------------- |
 | `@piplup/code-infra/eslint`      | `configs` (JS/TS, React, JSON, `package.json`, Markdown/MDX, tests), `ignores`, `nodeSupport`, the plugin |
 | `@piplup/code-infra/eslint/docs` | `configs.docs` for a Next.js docs app (needs `@next/eslint-plugin-next`)                                  |
-| `@piplup/code-infra/prettier`    | `createBaseConfig`, `docsOverrides`                                                                       |
+| `@piplup/code-infra/prettier`    | `config` (also the default export), `docsOverrides`                                                       |
 | `@piplup/code-infra/stylelint`   | Stylelint config, including CSS-in-JS                                                                     |
 | `@piplup/code-infra/remark`      | `createRemarkConfig` for `.remarkrc.mjs`; also used by the ESLint Markdown rules                          |
 | `@piplup/code-infra/oxlint`      | `presets`, `combine`, `rules`, and `createOxlintConfig` for an ESLint config's rules, run by oxlint       |
-| `@piplup/code-infra/oxfmt`       | `createOxfmtConfig`, `docsOverrides`: the Prettier config above, for oxfmt                                |
+| `@piplup/code-infra/oxfmt`       | `createOxfmtConfig`: a Prettier config, for oxfmt                                                         |
 
 `eslint.config.mjs`:
 
@@ -59,6 +59,20 @@ To require kebab-case file names, turn on `piplup/filename-case`. It's off by de
     'piplup/filename-case': ['error', { ignore: ['^[A-Z][A-Za-z]*\\.tsx$'] }],
   },
 }
+```
+
+`prettier.config.mjs`:
+
+```js
+export { default } from '@piplup/code-infra/prettier';
+```
+
+To change it, spread `config`. For example, `docsOverrides` narrows the print width of docs sources:
+
+```js
+import { config, docsOverrides } from '@piplup/code-infra/prettier';
+
+export default { ...config, overrides: [...config.overrides, ...docsOverrides] };
 ```
 
 `.remarkrc.mjs`:
@@ -119,6 +133,8 @@ import { createOxfmtConfig } from '@piplup/code-infra/oxfmt';
 
 export default createOxfmtConfig();
 ```
+
+`createOxfmtConfig()` formats like the Prettier config from `@piplup/code-infra/prettier`. Pass it your own Prettier config to keep your changes, for example `createOxfmtConfig(prettierConfig)` with `import prettierConfig from './prettier.config.mjs'`. It turns off oxfmt's sorting of imports, `package.json` keys and Tailwind classes, which Prettier doesn't do, and leaves out Prettier `plugins`, which oxfmt can't load.
 
 oxlint only lints JavaScript and TypeScript. To keep linting JSON, `package.json` and Markdown, run ESLint on those files alone:
 

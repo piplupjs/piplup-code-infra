@@ -5,7 +5,8 @@
  */
 
 /**
- * Narrower print width for docs sources, so code blocks don't overflow on the docs site.
+ * Narrower print width for docs sources, so code blocks don't overflow on the docs site. Add them
+ * to the config's `overrides`.
  * @type {Override[]}
  */
 export const docsOverrides = [
@@ -23,25 +24,25 @@ export const docsOverrides = [
 ];
 
 /**
- * @type {Override}
+ * The Prettier config. Use it as it is, or spread it into your own:
+ *
+ * ```js
+ * export default { ...config, overrides: [...config.overrides, ...docsOverrides] };
+ * ```
+ * @type {import('prettier').Config & { overrides: Override[] }}
  */
-const jsonOverride = {
-  files: ['**/*.json'],
-  options: {
-    trailingComma: 'none',
-  },
+export const config = {
+  overrides: [
+    {
+      files: ['**/*.json'],
+      options: {
+        trailingComma: 'none',
+      },
+    },
+  ],
+  printWidth: 100,
+  singleQuote: true,
+  trailingComma: 'all',
 };
 
-/**
- * @param {Object} [options={}]
- * @param {Override[]} [options.overrides]
- * @returns {import('prettier').Config}
- */
-export function createBaseConfig(options = {}) {
-  return {
-    overrides: [jsonOverride, ...(options.overrides ?? [])],
-    printWidth: 100,
-    singleQuote: true,
-    trailingComma: 'all',
-  };
-}
+export default config;

@@ -1,26 +1,30 @@
 // @ts-check
 
-import { createBaseConfig as createPrettierConfig, docsOverrides } from './prettier.mjs';
-
-export { docsOverrides };
+import { config as piplupConfig } from './prettier.mjs';
 
 /**
- * @typedef {Exclude<import('prettier').Config['overrides'], undefined>[number]} Override
- */
-
-/**
- * oxfmt config that formats like the Prettier config from `@piplup/code-infra/prettier`. oxfmt
- * takes Prettier's options and overrides, so this is that config with oxfmt's extra formatting
- * features turned off: Prettier doesn't sort imports, `package.json` keys or Tailwind classes.
- * Import order is left to the `import/order` lint rule.
+ * An oxfmt config that formats like a Prettier config: by default the one from
+ * `@piplup/code-infra/prettier`, or your own, so your changes carry over:
  *
- * @param {Object} [options={}]
- * @param {Override[]} [options.overrides] - Same as the Prettier `createBaseConfig`, e.g. `docsOverrides`.
+ * ```ts
+ * import prettierConfig from './prettier.config.mjs';
+ *
+ * export default createOxfmtConfig(prettierConfig);
+ * ```
+ *
+ * oxfmt takes Prettier's options and overrides, so this is that config with oxfmt's extra
+ * formatting features turned off: Prettier doesn't sort imports, `package.json` keys or Tailwind
+ * classes. Import order is left to the `import/order` lint rule. Prettier `plugins` are left out,
+ * since oxfmt can't load them.
+ *
+ * @param {import('prettier').Config} [prettierConfig] - Defaults to the config from
+ * `@piplup/code-infra/prettier`.
  * @returns {import('oxfmt').OxfmtConfig}
  */
-export function createOxfmtConfig(options = {}) {
+export function createOxfmtConfig(prettierConfig = piplupConfig) {
+  const { plugins, ...options } = prettierConfig;
   return {
-    .../** @type {import('oxfmt').OxfmtConfig} */ (createPrettierConfig(options)),
+    .../** @type {import('oxfmt').OxfmtConfig} */ (options),
     sortImports: false,
     sortPackageJson: false,
     sortTailwindcss: false,
