@@ -41,7 +41,6 @@
   },
   "scripts": {
     "prepare": "husky",
-    "preinstall": "npx only-allow pnpm",
     "build": "tsc -p tsconfig.build.json",
     "eslint": "eslint . --cache --report-unused-disable-directives --ext .js,.ts,.tsx --max-warnings 0",
     "eslint:ci": "eslint . --report-unused-disable-directives --ext .js,.ts,.tsx --max-warnings 0",
@@ -70,7 +69,13 @@
   },
   "author": "Sadik Malik",
   "license": "MIT",
-  "packageManager": "pnpm@11.20.0",
+  "devEngines": {
+    "packageManager": {
+      "name": "pnpm",
+      "version": "11.20.0",
+      "onFail": "error"
+    }
+  },
   "dependencies": {
     "@eslint/compat": "^2.1.1",
     "@eslint/js": "^10.0.1",
@@ -161,6 +166,7 @@
     "enquirer": "^2.4.1",
     "eslint": "^10.14.0",
     "husky": "^9.1.7",
+    "lint-staged": "^17.6.0",
     "oxfmt": "0.75.0",
     "oxlint": "1.93.0",
     "prettier": "^3.10.1",
