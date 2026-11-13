@@ -17,7 +17,7 @@ import {
   writePackageJson,
   writeOverridesToWorkspace,
 } from './pnpm.mjs';
-import { makeTempDir, privatePkg, publicPkg, writePackage } from './testUtils.mjs';
+import { makeTempDir, privatePkg, publicPkg, writePackage } from './test-utils.mjs';
 
 /**
  * Build the workspace maps expected by checkPublishDependencies.

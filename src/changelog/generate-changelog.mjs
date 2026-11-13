@@ -1,11 +1,11 @@
 import { getWorkspacePackages } from '../utils/pnpm.mjs';
 
-import { buildSections } from './buildSections.mjs';
-import { categorizeCommits } from './categorizeCommits.mjs';
-import { fetchCommitsBetweenRefs } from './fetchChangelogs.mjs';
-import { filterCommits } from './filterCommits.mjs';
-import { extractContributorsFromAllCommits, renderChangelog } from './renderChangelog.mjs';
-import { sortSections } from './sortSections.mjs';
+import { buildSections } from './build-sections.mjs';
+import { categorizeCommits } from './categorize-commits.mjs';
+import { fetchCommitsBetweenRefs } from './fetch-changelogs.mjs';
+import { filterCommits } from './filter-commits.mjs';
+import { extractContributorsFromAllCommits, renderChangelog } from './render-changelog.mjs';
+import { sortSections } from './sort-sections.mjs';
 
 /**
  * @typedef {import('./types.ts').GenerateChangelogOptions} GenerateChangelogOptions

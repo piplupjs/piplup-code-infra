@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 // eslint-disable-next-line import/extensions
-import { categorizeCommits } from './categorizeCommits.mjs';
+import { categorizeCommits } from './categorize-commits.mjs';
 
 import type { FetchedCommitDetails, CategorizationConfig, LabelConfig } from './types';
 

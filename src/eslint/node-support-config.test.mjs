@@ -4,7 +4,7 @@ import * as path from 'node:path';
 import { ESLint } from 'eslint';
 import { describe, it, expect } from 'vitest';
 
-import { makeTempDir, writePackage } from '../utils/testUtils.mjs';
+import { makeTempDir, writePackage } from '../utils/test-utils.mjs';
 
 import { createBaseConfig, createNodeSupportConfig } from './index.mjs';
 

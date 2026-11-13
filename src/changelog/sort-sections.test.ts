@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 // eslint-disable-next-line import/extensions
-import { sortSections } from './sortSections.mjs';
+import { sortSections } from './sort-sections.mjs';
 
 import type { ChangelogSection, CategorizationConfig, LabelConfig } from './types';
 

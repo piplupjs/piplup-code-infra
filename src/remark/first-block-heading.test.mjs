@@ -4,7 +4,7 @@ import remarkGfm from 'remark-gfm';
 import remarkMdx from 'remark-mdx';
 import { describe, it, expect } from 'vitest';
 
-import plugin from './firstBlockHeading.mjs';
+import plugin from './first-block-heading.mjs';
 
 /**
  * @param {string} input

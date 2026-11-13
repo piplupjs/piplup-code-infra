@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 // eslint-disable-next-line import/extensions
-import { parseCommitLabels } from './parseCommitLabels.mjs';
+import { parseCommitLabels } from './parse-commit-labels.mjs';
 
 import type { FetchedCommitDetails, LabelConfig } from './types';
 

@@ -3,7 +3,7 @@ import {
   isLiteralEq,
   isLiteralNeq,
   isInsideNodeEnvCheck,
-} from './nodeEnvUtils.mjs';
+} from './node-env-utils.mjs';
 
 /**
  * ESLint rule that enforces certain function calls to be wrapped with

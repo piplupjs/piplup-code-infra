@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 // eslint-disable-next-line import/extensions
-import { filterCommits } from './filterCommits.mjs';
+import { filterCommits } from './filter-commits.mjs';
 
 import type { FetchedCommitDetails, FilterConfig } from './types';
 

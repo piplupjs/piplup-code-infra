@@ -1,4 +1,4 @@
-import { isProcessEnvNodeEnv } from './nodeEnvUtils.mjs';
+import { isProcessEnvNodeEnv } from './node-env-utils.mjs';
 
 /**
  * Recursively checks if process.env.NODE_ENV appears anywhere in the node tree

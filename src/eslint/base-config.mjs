@@ -17,9 +17,9 @@ import globals from 'globals';
 import * as tseslint from 'typescript-eslint';
 
 import { EXTENSION_TS } from './extensions.mjs';
-import { createJsonConfig } from './jsonConfig.mjs';
-import { createNodeSupportConfig } from './nodeSupportConfig.mjs';
-import { createPackageJsonConfig } from './packageJsonConfig.mjs';
+import { createJsonConfig } from './json-config.mjs';
+import { createNodeSupportConfig } from './node-support-config.mjs';
+import { createPackageJsonConfig } from './package-json-config.mjs';
 import { createCoreConfig } from './piplup/config.mjs';
 import piplupPlugin from './piplup/index.mjs';
 

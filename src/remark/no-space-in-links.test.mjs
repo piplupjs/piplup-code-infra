@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 
-import { createLintTester } from './createLintTester.mjs';
-import plugin from './noSpaceInLinks.mjs';
+import { createLintTester } from './create-lint-tester.mjs';
+import plugin from './no-space-in-links.mjs';
 
 const lint = createLintTester(plugin);
 

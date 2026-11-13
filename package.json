@@ -10,9 +10,9 @@
   "sideEffects": false,
   "exports": {
     "./package.json": "./package.json",
-    "./brokenLinksChecker": {
-      "types": "./build/brokenLinksChecker/index.d.mts",
-      "default": "./src/brokenLinksChecker/index.mjs"
+    "./broken-links-checker": {
+      "types": "./build/broken-links-checker/index.d.mts",
+      "default": "./src/broken-links-checker/index.mjs"
     },
     "./changelog": {
       "types": "./build/changelog/index.d.mts",
@@ -24,7 +24,7 @@
     },
     "./eslint/docs": {
       "types": "./build/eslint/docsConfig.d.mts",
-      "default": "./src/eslint/docsConfig.mjs"
+      "default": "./src/eslint/docs-config.mjs"
     },
     "./github": {
       "types": "./build/utils/github.d.mts",
@@ -65,8 +65,8 @@
     "LICENSE",
     "!src/**/__fixtures__/**",
     "!src/**/*.test.*",
-    "!src/setupVitest.ts",
-    "!src/utils/testUtils.mjs"
+    "!src/setup-vitest.ts",
+    "!src/utils/test-utils.mjs"
   ],
   "publishConfig": {
     "access": "public"

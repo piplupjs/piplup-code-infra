@@ -17,12 +17,12 @@ import remarkLintNoUnusedDefinitions from 'remark-lint-no-unused-definitions';
 import remarkLintTablePipes from 'remark-lint-table-pipes';
 import { unified } from 'unified';
 
-import piplupFirstBlockHeading from './firstBlockHeading.mjs';
-import piplupGitDiff from './gitDiff.mjs';
-import piplupNoSpaceInLinks from './noSpaceInLinks.mjs';
-import piplupStraightQuotes from './straightQuotes.mjs';
-import piplupTableAlignment from './tableAlignment.mjs';
-import piplupTerminalLanguage from './terminalLanguage.mjs';
+import piplupFirstBlockHeading from './first-block-heading.mjs';
+import piplupGitDiff from './git-diff.mjs';
+import piplupNoSpaceInLinks from './no-space-in-links.mjs';
+import piplupStraightQuotes from './straight-quotes.mjs';
+import piplupTableAlignment from './table-alignment.mjs';
+import piplupTerminalLanguage from './terminal-language.mjs';
 
 const GITHUB_ALERT_LABELS = ['!NOTE', '!TIP', '!WARNING', '!IMPORTANT', '!CAUTION'];
 

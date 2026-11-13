@@ -6,8 +6,8 @@ import { remark } from 'remark';
 import remarkMdx from 'remark-mdx';
 import { describe, it, expect } from 'vitest';
 
-import { createBaseConfig } from '../eslint/baseConfig.mjs';
-import { makeTempDir } from '../utils/testUtils.mjs';
+import { createBaseConfig } from '../eslint/base-config.mjs';
+import { makeTempDir } from '../utils/test-utils.mjs';
 
 import { createRemarkConfig } from './config.mjs';
 

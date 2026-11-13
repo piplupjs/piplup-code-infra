@@ -1,4 +1,4 @@
-import { parseCommitLabels } from './parseCommitLabels.mjs';
+import { parseCommitLabels } from './parse-commit-labels.mjs';
 
 /**
  * @typedef {import('./types.ts').FetchedCommitDetails} FetchedCommitDetails

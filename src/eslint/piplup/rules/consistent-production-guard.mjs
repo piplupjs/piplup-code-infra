@@ -1,4 +1,4 @@
-import { isProcessEnvNodeEnv, isLiteralEq } from './nodeEnvUtils.mjs';
+import { isProcessEnvNodeEnv, isLiteralEq } from './node-env-utils.mjs';
 
 /**
  * ESLint rule that enforces consistent patterns for production guard checks.

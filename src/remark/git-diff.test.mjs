@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 
-import { createLintTester } from './createLintTester.mjs';
-import plugin from './gitDiff.mjs';
+import { createLintTester } from './create-lint-tester.mjs';
+import plugin from './git-diff.mjs';
 
 const lint = createLintTester(plugin);
 

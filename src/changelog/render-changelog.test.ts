@@ -2,7 +2,7 @@
 import { describe, expect, it } from 'vitest';
 
 // eslint-disable-next-line import/extensions
-import { renderChangelog } from './renderChangelog.mjs';
+import { renderChangelog } from './render-changelog.mjs';
 
 import type { ChangelogSection, CategorizedCommit, ChangelogConfig } from './types';
 

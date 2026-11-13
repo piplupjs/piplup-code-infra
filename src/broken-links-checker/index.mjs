@@ -12,7 +12,7 @@ import { execa, parseCommandString } from 'execa';
 const DEFAULT_CONCURRENCY = 4;
 const SERVER_START_TIMEOUT = 10000;
 
-const crawlWorkerUrl = new URL('./crawlWorker.mjs', import.meta.url);
+const crawlWorkerUrl = new URL('./crawl-worker.mjs', import.meta.url);
 
 /**
  * Creates a Transform stream that prefixes each line with a given string.

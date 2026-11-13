@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 
-import { parseAlias } from './cmdRenameScope.mjs';
+import { parseAlias } from './cmd-rename-scope.mjs';
 
 describe('parseAlias', () => {
   it('splits a mapping into its two scopes', () => {

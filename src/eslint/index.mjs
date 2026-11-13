@@ -1,7 +1,7 @@
 /// <reference types="../estree-typescript" />
 /// <reference types="../untyped-plugins" />
 
-export * from './baseConfig.mjs';
-export * from './nodeSupportConfig.mjs';
-export * from './testConfig.mjs';
+export * from './base-config.mjs';
+export * from './node-support-config.mjs';
+export * from './test-config.mjs';
 export * from './extensions.mjs';
