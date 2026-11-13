@@ -54,7 +54,7 @@ describe('createOxfmtConfig', () => {
         expect(await fs.readFile(path.join(dir, file), 'utf8'), file).toBe(expected[file]);
       }
     } finally {
-      await fs.rm(dir, { recursive: true, force: true });
+      await fs.rm(dir, { force: true, recursive: true });
     }
   }, 60_000);
 
@@ -70,7 +70,7 @@ describe('createOxfmtConfig', () => {
       expect(result.stdout + result.stderr).not.toMatch(/Format issues found/);
       expect(result.status).toBe(0);
     } finally {
-      await fs.rm(dir, { recursive: true, force: true });
+      await fs.rm(dir, { force: true, recursive: true });
     }
   }, 60_000);
 });

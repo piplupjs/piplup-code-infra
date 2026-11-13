@@ -1,4 +1,4 @@
-import plugin from '../../plugins/react.mjs';
+import plugin from '../../lint/plugins/react.mjs';
 
 import { withEslintDirectives } from './with-eslint-directives.mjs';
 

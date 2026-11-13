@@ -26,6 +26,8 @@ import piplupTerminalLanguage from './terminal-language.mjs';
 
 const GITHUB_ALERT_LABELS = ['!NOTE', '!TIP', '!WARNING', '!IMPORTANT', '!CAUTION'];
 
+// remark runs the rules in this order, which is also the order of their messages.
+/* eslint-disable perfectionist/sort-objects */
 const RULES = {
   'no-duplicate-headings': [remarkLintNoDuplicateHeadings, ['error']],
   'no-multiple-toplevel-headings': [remarkLintNoMultipleToplevelHeadings, ['error']],
@@ -48,6 +50,7 @@ const RULES = {
   'piplup-table-alignment': [piplupTableAlignment, ['error']],
   'piplup-terminal-language': [piplupTerminalLanguage, ['error']],
 };
+/* eslint-enable perfectionist/sort-objects */
 
 /**
  * @param {string | undefined} filePath
@@ -169,7 +172,7 @@ function remarkPreserveSource() {
  * @param {Array<{ files: string | string[], rules: Record<string, false | unknown[]> }>} [options.overrides]
  * @returns {import('unified').Preset}
  */
-export function createRemarkConfig({ overrides = [], allowDefinitionComments = false } = {}) {
+export function createRemarkConfig({ allowDefinitionComments = false, overrides = [] } = {}) {
   for (const override of overrides) {
     const unknown = Object.keys(override.rules).filter((ruleName) => !(ruleName in RULES));
     if (unknown.length > 0) {

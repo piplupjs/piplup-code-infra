@@ -4,19 +4,6 @@ const nonStraightQuotes = /[‘’“”]/gm;
  * @type {import('eslint').Rule.RuleModule}
  */
 const rule = {
-  meta: {
-    docs: {
-      description:
-        'Only allow straight quotes. Curly quotes can still be used but in specific context where relevant.',
-    },
-    messages: {
-      wrongQuotes:
-        'Only allow straight quotes. Curly quotes can still be used but in specific context where relevant.',
-    },
-    // fixable: 'code', TODO
-    type: 'suggestion',
-    schema: [],
-  },
   create(context) {
     return {
       Program(node) {
@@ -26,16 +13,29 @@ const rule = {
         // eslint-disable-next-line no-cond-assign
         while ((match = nonStraightQuotes.exec(value)) !== null) {
           context.report({
-            node,
             loc: {
-              start: context.sourceCode.getLocFromIndex(match.index),
               end: context.sourceCode.getLocFromIndex(match.index + 1),
+              start: context.sourceCode.getLocFromIndex(match.index),
             },
             messageId: 'wrongQuotes',
+            node,
           });
         }
       },
     };
+  },
+  meta: {
+    docs: {
+      description:
+        'Only allow straight quotes. Curly quotes can still be used but in specific context where relevant.',
+    },
+    messages: {
+      wrongQuotes:
+        'Only allow straight quotes. Curly quotes can still be used but in specific context where relevant.',
+    },
+    schema: [],
+    // fixable: 'code', TODO
+    type: 'suggestion',
   },
 };
 

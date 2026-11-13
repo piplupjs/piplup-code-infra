@@ -35,20 +35,6 @@ import { isProcessEnvNodeEnv, isLiteralEq } from './node-env-utils.mjs';
  * @type {import('eslint').Rule.RuleModule}
  */
 const rule = {
-  meta: {
-    type: 'problem',
-    docs: {
-      description:
-        'Enforce consistent patterns for production guard checks using process.env.NODE_ENV',
-    },
-    messages: {
-      invalidComparison:
-        "Only compare process.env.NODE_ENV with 'production'. Use `process.env.NODE_ENV !== 'production'` or `process.env.NODE_ENV === 'production'` instead of comparing with '{{ comparedValue }}'.",
-      invalidUsage:
-        "process.env.NODE_ENV must be used in a binary comparison with === or !== and a literal 'production'. Use `process.env.NODE_ENV !== 'production'` or `process.env.NODE_ENV === 'production'`.",
-    },
-    schema: [],
-  },
   create(context) {
     /**
      * @param {import("estree").BinaryExpression} binaryNode
@@ -56,11 +42,11 @@ const rule = {
      */
     function report(binaryNode, valueNode) {
       context.report({
-        node: binaryNode,
-        messageId: 'invalidComparison',
         data: {
           comparedValue: valueNode.type === 'Literal' ? String(valueNode.value) : 'non-literal',
         },
+        messageId: 'invalidComparison',
+        node: binaryNode,
       });
     }
 
@@ -82,13 +68,27 @@ const rule = {
             // Valid usage, do nothing
           } else {
             context.report({
-              node,
               messageId: 'invalidUsage',
+              node,
             });
           }
         }
       },
     };
+  },
+  meta: {
+    docs: {
+      description:
+        'Enforce consistent patterns for production guard checks using process.env.NODE_ENV',
+    },
+    messages: {
+      invalidComparison:
+        "Only compare process.env.NODE_ENV with 'production'. Use `process.env.NODE_ENV !== 'production'` or `process.env.NODE_ENV === 'production'` instead of comparing with '{{ comparedValue }}'.",
+      invalidUsage:
+        "process.env.NODE_ENV must be used in a binary comparison with === or !== and a literal 'production'. Use `process.env.NODE_ENV !== 'production'` or `process.env.NODE_ENV === 'production'`.",
+    },
+    schema: [],
+    type: 'problem',
   },
 };
 

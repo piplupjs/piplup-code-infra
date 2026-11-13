@@ -1,9 +1,4 @@
 export default /** @type {import('eslint').Rule.RuleModule} */ ({
-  meta: {
-    messages: {
-      ignoreBeforeComment: '@ignore should be at the beginning of a block comment.',
-    },
-  },
   create: (context) => {
     const { sourceCode } = context;
     sourceCode.getAllComments().forEach((comment) => {
@@ -23,12 +18,17 @@ export default /** @type {import('eslint').Rule.RuleModule} */ ({
        */
       if (comment.value.match(/( *\*\n)( *\*.*\n)+( *\* @ignore\n)( *\*.*\n)*( )/)) {
         context.report({
-          node: comment,
           messageId: 'ignoreBeforeComment',
+          node: comment,
         });
       }
     });
 
     return {};
+  },
+  meta: {
+    messages: {
+      ignoreBeforeComment: '@ignore should be at the beginning of a block comment.',
+    },
   },
 });

@@ -1,4 +1,4 @@
-import plugin from '../../plugins/n.mjs';
+import plugin from '../../lint/plugins/n.mjs';
 
 import { withEslintDirectives } from './with-eslint-directives.mjs';
 

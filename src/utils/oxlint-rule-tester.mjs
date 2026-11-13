@@ -18,7 +18,7 @@ OxlintRuleTester.afterAll = afterAll;
 function toOxlintConfig(config = {}) {
   const { languageOptions = {}, ...rest } = config;
   const { parser, parserOptions = {}, ...languageRest } = languageOptions;
-  const { projectService, tsconfigRootDir, project, ecmaFeatures, ...parserRest } = parserOptions;
+  const { ecmaFeatures, project, projectService, tsconfigRootDir, ...parserRest } = parserOptions;
   return {
     // ESLint counts columns from 1, oxlint from 0.
     eslintCompat: true,
@@ -50,8 +50,8 @@ export class RuleTester extends OxlintRuleTester {
    * @param {any} rule
    * @param {{ valid: any[], invalid: any[] }} tests
    */
-  run(name, rule, { valid, invalid }) {
-    super.run(name, rule, { valid, invalid: invalid.map(toOxlintCase) });
+  run(name, rule, { invalid, valid }) {
+    super.run(name, rule, { invalid: invalid.map(toOxlintCase), valid });
   }
 }
 

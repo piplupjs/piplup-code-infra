@@ -1,4 +1,4 @@
-import plugin from '../../plugins/vitest.mjs';
+import plugin from '../../lint/plugins/vitest.mjs';
 
 import { withEslintDirectives } from './with-eslint-directives.mjs';
 

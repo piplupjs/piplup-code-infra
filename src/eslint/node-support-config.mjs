@@ -4,7 +4,7 @@ import * as path from 'node:path';
 import { defineConfig } from 'eslint/config';
 import { globbySync } from 'globby';
 
-import nPlugin from '../plugins/n.mjs';
+import nPlugin from '../lint/plugins/n.mjs';
 
 import { EXTENSION_TEST_FILE, EXTENSION_TS } from './extensions.mjs';
 
@@ -43,10 +43,10 @@ export function createNodeSupportConfig(baseDirectory) {
   }
   return defineConfig([
     {
-      name: 'Node.js support of package sources',
       basePath: baseDirectory,
       files: packageDirs.map((packageDir) => `${packageDir}/src/**/*${EXTENSION_TS}`),
       ignores: [`**/*${EXTENSION_TEST_FILE}`, `**/*.spec${EXTENSION_TS}`],
+      name: 'Node.js support of package sources',
       plugins: { n: nPlugin },
       rules: {
         'n/no-unsupported-features/es-builtins': 'error',

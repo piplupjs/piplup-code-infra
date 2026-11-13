@@ -75,30 +75,10 @@ function acceptsUndefined(typeNode, typeDefinitions) {
 }
 
 export default createRule({
-  meta: {
-    docs: {
-      description: 'Ensures that optional properties include undefined in their type.',
-    },
-    messages: {
-      addUndefined:
-        'Optional property "{{ propName }}" type does not explicitly include undefined. Add "| undefined".',
-    },
-    type: 'suggestion',
-    fixable: 'code',
-    schema: [],
-  },
-  name: RULE_NAME,
-  defaultOptions: [],
   create(context) {
     const typeDefinitions = new Map();
 
     return {
-      // Collect type alias definitions, ie, type Foo = ...
-      TSTypeAliasDeclaration(node) {
-        if (node.id && node.typeAnnotation) {
-          typeDefinitions.set(node.id.name, node.typeAnnotation);
-        }
-      },
       // only checks optional properties in types/interfaces
       TSPropertySignature(node) {
         if (!node.optional || !node.typeAnnotation) {
@@ -110,8 +90,6 @@ export default createRule({
         }
         const source = context.sourceCode;
         context.report({
-          node: node.key ?? node,
-          messageId: 'addUndefined',
           data: {
             propName: source.getText(node.key),
           },
@@ -120,8 +98,30 @@ export default createRule({
             // prettier can handle formatting
             return fixer.replaceText(typeNode, `(${source.getText(typeNode)}) | undefined`);
           },
+          messageId: 'addUndefined',
+          node: node.key ?? node,
         });
+      },
+      // Collect type alias definitions, ie, type Foo = ...
+      TSTypeAliasDeclaration(node) {
+        if (node.id && node.typeAnnotation) {
+          typeDefinitions.set(node.id.name, node.typeAnnotation);
+        }
       },
     };
   },
+  defaultOptions: [],
+  meta: {
+    docs: {
+      description: 'Ensures that optional properties include undefined in their type.',
+    },
+    fixable: 'code',
+    messages: {
+      addUndefined:
+        'Optional property "{{ propName }}" type does not explicitly include undefined. Add "| undefined".',
+    },
+    schema: [],
+    type: 'suggestion',
+  },
+  name: RULE_NAME,
 });

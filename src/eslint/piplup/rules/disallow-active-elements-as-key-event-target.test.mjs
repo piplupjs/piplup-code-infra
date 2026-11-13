@@ -11,11 +11,6 @@ const ruleTester = new eslint.RuleTester({
 });
 
 ruleTester.run('disallow-active-element-as-key-event-target', rule, {
-  valid: [
-    "import { fireEvent } from '@testing-library/react';\nfireEvent.keyDown(getByRole('button'), { key: ' ' })",
-    "import { fireEvent } from '@testing-library/react';\nfireEvent.keyDown(document.body, { key: 'Escape' })",
-    "import { fireEvent } from '@testing-library/react';\nfireEvent.keyUp(document.body, { key: 'Tab' })",
-  ],
   invalid: [
     {
       code: "import { fireEvent } from '@testing-library/react';\nfireEvent.keyUp(document.activeElement, { key: 'LeftArrow' })",
@@ -63,5 +58,10 @@ ruleTester.run('disallow-active-element-as-key-event-target', rule, {
         },
       ],
     },
+  ],
+  valid: [
+    "import { fireEvent } from '@testing-library/react';\nfireEvent.keyDown(getByRole('button'), { key: ' ' })",
+    "import { fireEvent } from '@testing-library/react';\nfireEvent.keyDown(document.body, { key: 'Escape' })",
+    "import { fireEvent } from '@testing-library/react';\nfireEvent.keyUp(document.body, { key: 'Tab' })",
   ],
 });

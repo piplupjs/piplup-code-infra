@@ -20,8 +20,8 @@ const remarkLintPiplupStraightQuotes = lintRule(
       } else if (curlyQuotes.has(char)) {
         const column = index - lineStart + 1;
         file.message('Use straight quotes instead of curly quotes.', {
-          start: { line, column },
-          end: { line, column: column + 1 },
+          end: { column: column + 1, line },
+          start: { column, line },
         });
       }
     }

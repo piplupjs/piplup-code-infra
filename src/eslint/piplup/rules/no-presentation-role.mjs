@@ -2,19 +2,6 @@
  * @type {import('eslint').Rule.RuleModule}
  */
 const rule = {
-  meta: {
-    docs: {
-      description:
-        'Disallow role="presentation" in favor of role="none". Both are equivalent, but role="none" is clearer and shorter.',
-    },
-    messages: {
-      noPresentation:
-        'Use role="none" instead of role="presentation". They are equivalent, but role="none" is preferred.',
-    },
-    fixable: 'code',
-    type: 'suggestion',
-    schema: [],
-  },
   create(context) {
     return {
       /** @param {import('estree-jsx').JSXAttribute} node */
@@ -28,11 +15,11 @@ const rule = {
         // role="presentation"
         if (value !== null && value.type === 'Literal' && value.value === 'presentation') {
           context.report({
-            node,
-            messageId: 'noPresentation',
             fix(fixer) {
               return fixer.replaceText(value, '"none"');
             },
+            messageId: 'noPresentation',
+            node,
           });
           return;
         }
@@ -45,15 +32,28 @@ const rule = {
           value.expression.value === 'presentation'
         ) {
           context.report({
-            node,
-            messageId: 'noPresentation',
             fix(fixer) {
               return fixer.replaceText(value, '"none"');
             },
+            messageId: 'noPresentation',
+            node,
           });
         }
       },
     };
+  },
+  meta: {
+    docs: {
+      description:
+        'Disallow role="presentation" in favor of role="none". Both are equivalent, but role="none" is clearer and shorter.',
+    },
+    fixable: 'code',
+    messages: {
+      noPresentation:
+        'Use role="none" instead of role="presentation". They are equivalent, but role="none" is preferred.',
+    },
+    schema: [],
+    type: 'suggestion',
   },
 };
 

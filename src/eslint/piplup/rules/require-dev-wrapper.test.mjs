@@ -10,6 +10,149 @@ const ruleTester = new eslint.RuleTester({
 });
 
 ruleTester.run('require-dev-wrapper', rule, {
+  invalid: [
+    // Should fail: checkSlot without production check
+    {
+      code: `
+checkSlot(key, overrides[k]);
+      `,
+      errors: [
+        {
+          data: { functionName: 'checkSlot' },
+          messageId: 'missingDevWrapper',
+        },
+      ],
+    },
+    // Should fail: warnOnce without production check
+    {
+      code: `
+warnOnce('Some warning');
+      `,
+      errors: [
+        {
+          data: { functionName: 'warnOnce' },
+          messageId: 'missingDevWrapper',
+        },
+      ],
+    },
+    // Should fail: warn without production check
+    {
+      code: `
+warn('Some warning');
+      `,
+      errors: [
+        {
+          data: { functionName: 'warn' },
+          messageId: 'missingDevWrapper',
+        },
+      ],
+    },
+    // Should fail: Multiple unwrapped calls
+    {
+      code: `
+checkSlot(key, value);
+warn('Warning message');
+      `,
+      errors: [
+        {
+          data: { functionName: 'checkSlot' },
+          messageId: 'missingDevWrapper',
+        },
+        {
+          data: { functionName: 'warn' },
+          messageId: 'missingDevWrapper',
+        },
+      ],
+    },
+    // Should fail: Inside wrong conditional (no process.env.NODE_ENV)
+    {
+      code: `
+if (someOtherCondition) {
+  checkSlot(key, value);
+}
+      `,
+      errors: [
+        {
+          data: { functionName: 'checkSlot' },
+          messageId: 'missingDevWrapper',
+        },
+      ],
+    },
+    // Should fail: Inside else block of production check (!== 'production')
+    {
+      code: `
+if (process.env.NODE_ENV !== 'production') {
+  // ok
+} else {
+  checkSlot(key, value);
+}
+      `,
+      errors: [
+        {
+          data: { functionName: 'checkSlot' },
+          messageId: 'missingDevWrapper',
+        },
+      ],
+    },
+    // Should fail: In then block of === 'production' (would run in production!)
+    {
+      code: `
+if (process.env.NODE_ENV === 'production') {
+  checkSlot(key, value);
+}
+      `,
+      errors: [
+        {
+          data: { functionName: 'checkSlot' },
+          messageId: 'missingDevWrapper',
+        },
+      ],
+    },
+    // Should fail: !== 'test' doesn't reliably tree-shake
+    {
+      code: `
+if (process.env.NODE_ENV !== 'test') {
+  checkSlot(key, value);
+}
+      `,
+      errors: [
+        {
+          data: { functionName: 'checkSlot' },
+          messageId: 'missingDevWrapper',
+        },
+      ],
+    },
+    // Should fail: Non-static check doesn't tree-shake
+    {
+      code: `
+const env = 'production';
+if (process.env.NODE_ENV !== env) {
+  checkSlot(key, value);
+}
+      `,
+      errors: [
+        {
+          data: { functionName: 'checkSlot' },
+          messageId: 'missingDevWrapper',
+        },
+      ],
+    },
+    // Should fail: else-if after !== 'production' means call runs IN production
+    {
+      code: `
+if (process.env.NODE_ENV !== 'production') {
+} else if (someCondition) {
+  warn('this runs in production');
+}
+      `,
+      errors: [
+        {
+          data: { functionName: 'warn' },
+          messageId: 'missingDevWrapper',
+        },
+      ],
+    },
+  ],
   valid: [
     // Should pass: Function wrapped with !== production check
     {
@@ -118,149 +261,6 @@ if (process.env.NODE_ENV === 'production') {
   warn('not production');
 }
       `,
-    },
-  ],
-  invalid: [
-    // Should fail: checkSlot without production check
-    {
-      code: `
-checkSlot(key, overrides[k]);
-      `,
-      errors: [
-        {
-          messageId: 'missingDevWrapper',
-          data: { functionName: 'checkSlot' },
-        },
-      ],
-    },
-    // Should fail: warnOnce without production check
-    {
-      code: `
-warnOnce('Some warning');
-      `,
-      errors: [
-        {
-          messageId: 'missingDevWrapper',
-          data: { functionName: 'warnOnce' },
-        },
-      ],
-    },
-    // Should fail: warn without production check
-    {
-      code: `
-warn('Some warning');
-      `,
-      errors: [
-        {
-          messageId: 'missingDevWrapper',
-          data: { functionName: 'warn' },
-        },
-      ],
-    },
-    // Should fail: Multiple unwrapped calls
-    {
-      code: `
-checkSlot(key, value);
-warn('Warning message');
-      `,
-      errors: [
-        {
-          messageId: 'missingDevWrapper',
-          data: { functionName: 'checkSlot' },
-        },
-        {
-          messageId: 'missingDevWrapper',
-          data: { functionName: 'warn' },
-        },
-      ],
-    },
-    // Should fail: Inside wrong conditional (no process.env.NODE_ENV)
-    {
-      code: `
-if (someOtherCondition) {
-  checkSlot(key, value);
-}
-      `,
-      errors: [
-        {
-          messageId: 'missingDevWrapper',
-          data: { functionName: 'checkSlot' },
-        },
-      ],
-    },
-    // Should fail: Inside else block of production check (!== 'production')
-    {
-      code: `
-if (process.env.NODE_ENV !== 'production') {
-  // ok
-} else {
-  checkSlot(key, value);
-}
-      `,
-      errors: [
-        {
-          messageId: 'missingDevWrapper',
-          data: { functionName: 'checkSlot' },
-        },
-      ],
-    },
-    // Should fail: In then block of === 'production' (would run in production!)
-    {
-      code: `
-if (process.env.NODE_ENV === 'production') {
-  checkSlot(key, value);
-}
-      `,
-      errors: [
-        {
-          messageId: 'missingDevWrapper',
-          data: { functionName: 'checkSlot' },
-        },
-      ],
-    },
-    // Should fail: !== 'test' doesn't reliably tree-shake
-    {
-      code: `
-if (process.env.NODE_ENV !== 'test') {
-  checkSlot(key, value);
-}
-      `,
-      errors: [
-        {
-          messageId: 'missingDevWrapper',
-          data: { functionName: 'checkSlot' },
-        },
-      ],
-    },
-    // Should fail: Non-static check doesn't tree-shake
-    {
-      code: `
-const env = 'production';
-if (process.env.NODE_ENV !== env) {
-  checkSlot(key, value);
-}
-      `,
-      errors: [
-        {
-          messageId: 'missingDevWrapper',
-          data: { functionName: 'checkSlot' },
-        },
-      ],
-    },
-    // Should fail: else-if after !== 'production' means call runs IN production
-    {
-      code: `
-if (process.env.NODE_ENV !== 'production') {
-} else if (someCondition) {
-  warn('this runs in production');
-}
-      `,
-      errors: [
-        {
-          messageId: 'missingDevWrapper',
-          data: { functionName: 'warn' },
-        },
-      ],
     },
   ],
 });

@@ -13,14 +13,14 @@ describe('remark-lint-piplup-straight-quotes', () => {
   it('flags curly double quotes with correct location', () => {
     const messages = lint(`# Title\n\nA paragraph with “curly” quotes.\n`);
     expect(messages).toHaveLength(2);
-    expect(messages[0]).toMatchObject({ line: 3, column: 18 });
-    expect(messages[1]).toMatchObject({ line: 3, column: 24 });
+    expect(messages[0]).toMatchObject({ column: 18, line: 3 });
+    expect(messages[1]).toMatchObject({ column: 24, line: 3 });
   });
 
   it('flags curly single quotes', () => {
     const messages = lint(`Use ‘single’ curly quotes too.\n`);
     expect(messages).toHaveLength(2);
-    expect(messages[0]).toMatchObject({ line: 1, column: 5 });
-    expect(messages[1]).toMatchObject({ line: 1, column: 12 });
+    expect(messages[0]).toMatchObject({ column: 5, line: 1 });
+    expect(messages[1]).toMatchObject({ column: 12, line: 1 });
   });
 });

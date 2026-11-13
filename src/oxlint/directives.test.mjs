@@ -10,9 +10,9 @@ import { findDisablingDirective, parseDirectives } from './directives.mjs';
  */
 function comment(type, value, line, endLine = line) {
   return {
+    loc: { end: { column: value.length + 4, line: endLine }, start: { column: 0, line } },
     type,
     value,
-    loc: { start: { line, column: 0 }, end: { line: endLine, column: value.length + 4 } },
   };
 }
 
@@ -47,18 +47,18 @@ describe('findDisablingDirective', () => {
     const directives = parseDirectives([
       comment('Block', ' eslint-disable-next-line react/prop-types ', 1, 2),
     ]);
-    expect(findDisablingDirective(directives, isPropTypes, { line: 2, column: 0 })).toBeUndefined();
-    expect(findDisablingDirective(directives, isPropTypes, { line: 3, column: 0 })).toMatchObject({
+    expect(findDisablingDirective(directives, isPropTypes, { column: 0, line: 2 })).toBeUndefined();
+    expect(findDisablingDirective(directives, isPropTypes, { column: 0, line: 3 })).toMatchObject({
       ruleName: 'react/prop-types',
     });
   });
 
   it('applies `-line` to its own line only', () => {
     const directives = parseDirectives([comment('Line', ' eslint-disable-line', 4)]);
-    expect(findDisablingDirective(directives, isPropTypes, { line: 4, column: 9 })).toMatchObject({
+    expect(findDisablingDirective(directives, isPropTypes, { column: 9, line: 4 })).toMatchObject({
       ruleName: null,
     });
-    expect(findDisablingDirective(directives, isPropTypes, { line: 5, column: 0 })).toBeUndefined();
+    expect(findDisablingDirective(directives, isPropTypes, { column: 0, line: 5 })).toBeUndefined();
   });
 
   it('applies a block `disable` until the matching `enable`', () => {
@@ -66,13 +66,13 @@ describe('findDisablingDirective', () => {
       comment('Block', ' eslint-disable react/prop-types ', 2),
       comment('Block', ' eslint-enable react/prop-types ', 6),
     ]);
-    expect(findDisablingDirective(directives, isPropTypes, { line: 1, column: 0 })).toBeUndefined();
-    expect(findDisablingDirective(directives, isPropTypes, { line: 4, column: 0 })).toBeDefined();
-    expect(findDisablingDirective(directives, isPropTypes, { line: 7, column: 0 })).toBeUndefined();
+    expect(findDisablingDirective(directives, isPropTypes, { column: 0, line: 1 })).toBeUndefined();
+    expect(findDisablingDirective(directives, isPropTypes, { column: 0, line: 4 })).toBeDefined();
+    expect(findDisablingDirective(directives, isPropTypes, { column: 0, line: 7 })).toBeUndefined();
   });
 
   it('only matches the rules it names', () => {
     const directives = parseDirectives([comment('Line', ' eslint-disable-next-line no-var', 1)]);
-    expect(findDisablingDirective(directives, isPropTypes, { line: 2, column: 0 })).toBeUndefined();
+    expect(findDisablingDirective(directives, isPropTypes, { column: 0, line: 2 })).toBeUndefined();
   });
 });

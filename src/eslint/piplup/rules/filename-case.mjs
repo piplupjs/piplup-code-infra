@@ -21,28 +21,6 @@ function toKebabCase(segment) {
  * @type {import('eslint').Rule.RuleModule}
  */
 const rule = {
-  meta: {
-    type: 'suggestion',
-    docs: {
-      description: 'Require kebab-case file names.',
-    },
-    messages: {
-      notKebabCase: 'File name "{{name}}" is not kebab-case. Rename it to "{{suggestion}}".',
-    },
-    schema: [
-      {
-        type: 'object',
-        properties: {
-          ignore: {
-            type: 'array',
-            items: { type: 'string' },
-            description: 'Regular expressions for file names (not paths) to skip.',
-          },
-        },
-        additionalProperties: false,
-      },
-    ],
-  },
   create(context) {
     const name = path.basename(context.physicalFilename ?? context.filename);
     // Code passed on stdin or to the RuleTester without a file name has no name to check.
@@ -71,16 +49,38 @@ const rule = {
     return {
       Program(node) {
         context.report({
-          node,
-          loc: { line: 1, column: 0 },
-          messageId: 'notKebabCase',
           data: {
             name,
             suggestion: segments.map((segment) => toKebabCase(segment)).join('.'),
           },
+          loc: { column: 0, line: 1 },
+          messageId: 'notKebabCase',
+          node,
         });
       },
     };
+  },
+  meta: {
+    docs: {
+      description: 'Require kebab-case file names.',
+    },
+    messages: {
+      notKebabCase: 'File name "{{name}}" is not kebab-case. Rename it to "{{suggestion}}".',
+    },
+    schema: [
+      {
+        additionalProperties: false,
+        properties: {
+          ignore: {
+            description: 'Regular expressions for file names (not paths) to skip.',
+            items: { type: 'string' },
+            type: 'array',
+          },
+        },
+        type: 'object',
+      },
+    ],
+    type: 'suggestion',
   },
 };
 

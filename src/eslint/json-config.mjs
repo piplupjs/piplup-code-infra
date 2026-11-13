@@ -7,17 +7,17 @@ import { defineConfig } from 'eslint/config';
 export function createJsonConfig() {
   return defineConfig([
     {
-      name: 'JSON files',
+      extends: [json.configs.recommended],
       files: ['**/*.json'],
       // package.json is linted by eslint-plugin-package-json, whose rules need the jsonc-eslint-parser AST.
       ignores: ['package-lock.json', '**/package.json'],
-      plugins: { json },
       language: 'json/json',
-      extends: [json.configs.recommended],
+      name: 'JSON files',
+      plugins: { json },
     },
 
     {
-      name: 'JSONC files',
+      extends: [json.configs.recommended],
       files: [
         '**/*.jsonc',
         '**/tsconfig.json',
@@ -25,17 +25,17 @@ export function createJsonConfig() {
         '.vscode/**/*.json',
         'renovate.json',
       ],
-      plugins: { json },
       language: 'json/jsonc',
-      extends: [json.configs.recommended],
+      name: 'JSONC files',
+      plugins: { json },
     },
 
     {
-      name: 'JSON5 files',
-      files: ['**/*.json5'],
-      plugins: { json },
-      language: 'json/json5',
       extends: [json.configs.recommended],
+      files: ['**/*.json5'],
+      language: 'json/json5',
+      name: 'JSON5 files',
+      plugins: { json },
     },
   ]);
 }

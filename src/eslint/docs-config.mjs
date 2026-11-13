@@ -1,6 +1,6 @@
 import { defineConfig } from 'eslint/config';
 
-import { configs as nextConfigs } from '../plugins/next.mjs';
+import { configs as nextConfigs } from '../lint/plugins/next.mjs';
 
 import { EXTENSION_TS } from './extensions.mjs';
 
@@ -15,16 +15,16 @@ export function createDocsConfig({ rootDir = 'docs' } = {}) {
   return defineConfig(
     nextConfigs.recommended,
     {
-      settings: {
-        next: {
-          rootDir,
-        },
-      },
       files: [`**/*${EXTENSION_TS}`],
       rules: {
         'compat/compat': 'off',
         'jsx-a11y/anchor-is-valid': 'off',
         'no-irregular-whitespace': ['error', { skipJSXText: true, skipStrings: true }],
+      },
+      settings: {
+        next: {
+          rootDir,
+        },
       },
     },
     {

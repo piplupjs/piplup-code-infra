@@ -28,21 +28,6 @@ function getParenthesizedRange(node, sourceCode) {
 }
 
 export default createRule({
-  meta: {
-    docs: {
-      description:
-        'Flatten unnecessary parentheses in TypeScript unions and intersections when safe to do so. NOTE: This rule will become obsolete once Prettier handles this formatting automatically (see https://github.com/prettier/prettier/issues/13500).',
-    },
-    messages: {
-      flattenParentheses:
-        'Unnecessary parentheses in {{ operatorType }}. The inner types can be flattened.',
-    },
-    type: 'suggestion',
-    fixable: 'code',
-    schema: [],
-  },
-  name: 'flatten-parentheses',
-  defaultOptions: [],
   create(context) {
     const sourceCode = context.sourceCode;
 
@@ -64,8 +49,6 @@ export default createRule({
         }
 
         context.report({
-          node: typeNode,
-          messageId: 'flattenParentheses',
           data: { operatorType },
           fix(fixer) {
             // Use text between parens (exclusive) to preserve any interleaved comments
@@ -77,13 +60,30 @@ export default createRule({
             }
             return fixer.replaceTextRange(range, innerText);
           },
+          messageId: 'flattenParentheses',
+          node: typeNode,
         });
       }
     }
 
     return {
-      TSUnionType: checkNode,
       TSIntersectionType: checkNode,
+      TSUnionType: checkNode,
     };
   },
+  defaultOptions: [],
+  meta: {
+    docs: {
+      description:
+        'Flatten unnecessary parentheses in TypeScript unions and intersections when safe to do so. NOTE: This rule will become obsolete once Prettier handles this formatting automatically (see https://github.com/prettier/prettier/issues/13500).',
+    },
+    fixable: 'code',
+    messages: {
+      flattenParentheses:
+        'Unnecessary parentheses in {{ operatorType }}. The inner types can be flattened.',
+    },
+    schema: [],
+    type: 'suggestion',
+  },
+  name: 'flatten-parentheses',
 });

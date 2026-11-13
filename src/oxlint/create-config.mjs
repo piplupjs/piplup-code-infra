@@ -52,17 +52,17 @@ const typeAwareRules = new Set(builtin.typeAware);
  */
 const BUILTIN_SCOPES = {
   '': ['eslint'],
+  '@next/next': ['nextjs'],
   '@typescript-eslint': ['typescript', 'eslint'],
+  import: ['import'],
+  jsdoc: ['jsdoc'],
+  'jsx-a11y': ['jsx_a11y'],
+  n: ['node'],
+  promise: ['promise'],
   react: ['react'],
   'react-hooks': ['react'],
-  'jsx-a11y': ['jsx_a11y'],
-  import: ['import'],
-  vitest: ['vitest', 'jest'],
-  '@next/next': ['nextjs'],
-  n: ['node'],
   unicorn: ['unicorn'],
-  promise: ['promise'],
-  jsdoc: ['jsdoc'],
+  vitest: ['vitest', 'jest'],
 };
 
 /**
@@ -71,17 +71,17 @@ const BUILTIN_SCOPES = {
  */
 const SCOPE_NAMES = {
   eslint: { prefix: '' },
-  typescript: { prefix: 'typescript/', plugin: 'typescript' },
-  react: { prefix: 'react/', plugin: 'react' },
-  jsx_a11y: { prefix: 'jsx-a11y/', plugin: 'jsx-a11y' },
-  import: { prefix: 'import/', plugin: 'import' },
-  vitest: { prefix: 'vitest/', plugin: 'vitest' },
-  jest: { prefix: 'jest/', plugin: 'jest' },
-  nextjs: { prefix: 'nextjs/', plugin: 'nextjs' },
-  node: { prefix: 'node/', plugin: 'node' },
-  unicorn: { prefix: 'unicorn/', plugin: 'unicorn' },
-  promise: { prefix: 'promise/', plugin: 'promise' },
-  jsdoc: { prefix: 'jsdoc/', plugin: 'jsdoc' },
+  import: { plugin: 'import', prefix: 'import/' },
+  jest: { plugin: 'jest', prefix: 'jest/' },
+  jsdoc: { plugin: 'jsdoc', prefix: 'jsdoc/' },
+  jsx_a11y: { plugin: 'jsx-a11y', prefix: 'jsx-a11y/' },
+  nextjs: { plugin: 'nextjs', prefix: 'nextjs/' },
+  node: { plugin: 'node', prefix: 'node/' },
+  promise: { plugin: 'promise', prefix: 'promise/' },
+  react: { plugin: 'react', prefix: 'react/' },
+  typescript: { plugin: 'typescript', prefix: 'typescript/' },
+  unicorn: { plugin: 'unicorn', prefix: 'unicorn/' },
+  vitest: { plugin: 'vitest', prefix: 'vitest/' },
 };
 
 /**
@@ -94,34 +94,38 @@ function modulePath(relativePath) {
 
 /**
  * The ESLint plugins oxlint loads through `jsPlugins` for the rules it doesn't implement, keyed by
- * the ESLint rule prefix. They're the plugin modules the ESLint configs use (../plugins). Where
+ * the ESLint rule prefix. They're the plugin modules the ESLint configs use (../lint/plugins). Where
  * oxlint has a built-in plugin of the same name, the plugin runs under a `-js` name, through an
  * entry module in ./plugins that makes it honor `eslint-disable` comments using the ESLint name.
  * @type {Record<string, { name: string, specifier: string }>}
  */
 const JS_PLUGINS = {
   '': { name: 'eslint-js', specifier: modulePath('./plugins/eslint-core.mjs') },
+  '@next/next': { name: 'next-js', specifier: modulePath('./plugins/next.mjs') },
   '@typescript-eslint': {
     name: 'typescript-js',
     specifier: modulePath('./plugins/typescript-eslint.mjs'),
   },
-  react: { name: 'react-js', specifier: modulePath('./plugins/react.mjs') },
-  'react-hooks': { name: 'react-hooks-js', specifier: modulePath('./plugins/react-hooks.mjs') },
-  'jsx-a11y': { name: 'jsx-a11y-js', specifier: modulePath('./plugins/jsx-a11y.mjs') },
+  compat: { name: 'compat', specifier: modulePath('../lint/plugins/compat.mjs') },
   import: { name: 'import-js', specifier: modulePath('./plugins/import.mjs') },
-  vitest: { name: 'vitest-js', specifier: modulePath('./plugins/vitest.mjs') },
-  '@next/next': { name: 'next-js', specifier: modulePath('./plugins/next.mjs') },
+  'jsx-a11y': { name: 'jsx-a11y-js', specifier: modulePath('./plugins/jsx-a11y.mjs') },
   n: { name: 'node-js', specifier: modulePath('./plugins/n.mjs') },
-  compat: { name: 'compat', specifier: modulePath('../plugins/compat.mjs') },
-  'testing-library': {
-    name: 'testing-library',
-    specifier: modulePath('../plugins/testing-library.mjs'),
-  },
-  'react-compiler': {
-    name: 'react-compiler',
-    specifier: modulePath('../plugins/react-compiler.mjs'),
+  perfectionist: {
+    name: 'perfectionist',
+    specifier: modulePath('../lint/plugins/perfectionist.mjs'),
   },
   piplup: { name: 'piplup', specifier: modulePath('../eslint/piplup/index.mjs') },
+  react: { name: 'react-js', specifier: modulePath('./plugins/react.mjs') },
+  'react-compiler': {
+    name: 'react-compiler',
+    specifier: modulePath('../lint/plugins/react-compiler.mjs'),
+  },
+  'react-hooks': { name: 'react-hooks-js', specifier: modulePath('./plugins/react-hooks.mjs') },
+  'testing-library': {
+    name: 'testing-library',
+    specifier: modulePath('../lint/plugins/testing-library.mjs'),
+  },
+  vitest: { name: 'vitest-js', specifier: modulePath('./plugins/vitest.mjs') },
 };
 
 /**
@@ -171,7 +175,7 @@ export function routeRule(rule) {
   if (!PREFER_JS_PLUGIN.has(rule)) {
     for (const scope of BUILTIN_SCOPES[prefix] ?? []) {
       if (builtinRules.has(`${scope}/${name}`)) {
-        const { prefix: keyPrefix, plugin } = SCOPE_NAMES[scope];
+        const { plugin, prefix: keyPrefix } = SCOPE_NAMES[scope];
         return {
           key: `${keyPrefix}${name}`,
           plugin,
@@ -187,7 +191,7 @@ export function routeRule(rule) {
         `Add its plugin to JS_PLUGINS in src/oxlint/create-config.mjs.`,
     );
   }
-  return { key: `${jsPlugin}/${name}`, jsPlugin };
+  return { jsPlugin, key: `${jsPlugin}/${name}` };
 }
 
 /**
@@ -308,9 +312,9 @@ function findNodePackageDirs(baseDirectory) {
  */
 export async function createOxlintConfig({
   baseDirectory = process.cwd(),
-  enableReactCompiler = false,
   consistentTypeImports = true,
   docs = false,
+  enableReactCompiler = false,
 } = {}) {
   const docsRootDir = docs ? ((docs === true ? undefined : docs.rootDir) ?? 'docs') : undefined;
   const docsFiles =
@@ -321,24 +325,24 @@ export async function createOxlintConfig({
   const eslintConfig = defineConfig(
     createBaseConfig({
       baseDirectory,
-      enableReactCompiler,
       consistentTypeImports,
+      enableReactCompiler,
       markdown: false,
     }),
-    { files: [`**/*${EXTENSION_TEST_FILE}`], extends: createTestConfig() },
+    { extends: createTestConfig(), files: [`**/*${EXTENSION_TEST_FILE}`] },
     docsFiles
       ? {
-          files: [docsFiles],
           extends: (await import('../eslint/docs-config.mjs')).createDocsConfig({
             rootDir: docsRootDir,
           }),
+          files: [docsFiles],
         }
       : [],
   );
   const eslint = new ESLint({
     cwd: baseDirectory,
-    overrideConfigFile: true,
     overrideConfig: eslintConfig,
+    overrideConfigFile: true,
   });
 
   // Each category is a set of files ESLint configures differently, with a sample file to ask
@@ -354,8 +358,8 @@ export async function createOxlintConfig({
     { files: ['**/*.tsx'], sample: `${SAMPLE}/sample.tsx` },
     { files: ['**/*.d.{ts,mts,cts}'], sample: `${SAMPLE}/sample.d.ts` },
     ...nodePackageDirs.map((dir) => ({
-      files: [`${dir}/src/**/*.${JS_EXTENSIONS}`],
       excludeFiles: [TEST_FILES, `**/*.spec.${JS_EXTENSIONS}`],
+      files: [`${dir}/src/**/*.${JS_EXTENSIONS}`],
       sample: `${dir}/src/${SAMPLE}.ts`,
     })),
     { files: [TEST_FILES], sample: `${SAMPLE}/sample.test.tsx` },
@@ -422,10 +426,10 @@ export async function createOxlintConfig({
       settings = config.settings ?? {};
     }
     resolved.push({
-      files: category.files,
       excludeFiles: category.excludeFiles,
-      rules: translateRules(config.rules ?? {}),
+      files: category.files,
       globals: toOxlintGlobals(config.languageOptions?.globals),
+      rules: translateRules(config.rules ?? {}),
     });
   }
 
@@ -477,11 +481,15 @@ export async function createOxlintConfig({
   }
 
   return {
-    plugins: [...plugins].sort(),
-    jsPlugins: Object.values(JS_PLUGINS).filter(({ name }) => jsPlugins.has(name)),
     // Only the rules listed below run.
     categories: { correctness: 'off' },
     globals: root.globals,
+    ignorePatterns: readIgnoreFile(baseDirectory),
+    jsPlugins: Object.values(JS_PLUGINS).filter(({ name }) => jsPlugins.has(name)),
+    options: needsTypeAware && hasTypeAwareBackend(baseDirectory) ? { typeAware: true } : {},
+    overrides,
+    plugins: [...plugins].sort(),
+    rules: root.rules,
     settings: {
       ...settings,
       react: {
@@ -492,9 +500,5 @@ export async function createOxlintConfig({
       },
       ...(docsRootDir === undefined ? {} : { next: { rootDir: docsRootDir } }),
     },
-    rules: root.rules,
-    overrides,
-    ignorePatterns: readIgnoreFile(baseDirectory),
-    options: needsTypeAware && hasTypeAwareBackend(baseDirectory) ? { typeAware: true } : {},
   };
 }

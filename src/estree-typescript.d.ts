@@ -4,18 +4,18 @@ export * from 'estree';
 
 declare module 'estree' {
   interface ExpressionMap {
-    TSNonNullExpression: TSNonNullExpression;
     TSAsExpression: TSAsExpression;
+    TSNonNullExpression: TSNonNullExpression;
   }
 }
 
 export interface TSNonNullExpression extends BaseExpression {
-  type: 'TSNonNullExpression';
   expression: Expression;
+  type: 'TSNonNullExpression';
 }
 
 export interface TSAsExpression extends BaseExpression {
-  type: 'TSAsExpression';
   expression: Expression;
+  type: 'TSAsExpression';
   typeAnnotation: Expression;
 }

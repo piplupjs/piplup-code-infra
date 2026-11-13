@@ -10,6 +10,113 @@ const ruleTester = new eslint.RuleTester({
 });
 
 ruleTester.run('consistent-production-guard', rule, {
+  invalid: [
+    // Should fail: Comparing with 'development'
+    {
+      code: `
+if (process.env.NODE_ENV === 'development') {
+  console.log('dev');
+}
+      `,
+      errors: [
+        {
+          data: { comparedValue: 'development' },
+          messageId: 'invalidComparison',
+        },
+      ],
+    },
+    // Should fail: Comparing with 'test'
+    {
+      code: `
+if (process.env.NODE_ENV !== 'test') {
+  console.log('not test');
+}
+      `,
+      errors: [
+        {
+          data: { comparedValue: 'test' },
+          messageId: 'invalidComparison',
+        },
+      ],
+    },
+    // Should fail: Reversed comparison with 'development'
+    {
+      code: `
+if ('development' === process.env.NODE_ENV) {
+  console.log('dev');
+}
+      `,
+      errors: [
+        {
+          data: { comparedValue: 'development' },
+          messageId: 'invalidComparison',
+        },
+      ],
+    },
+    // Should fail: Non-static comparison (variable)
+    {
+      code: `
+const env = 'production';
+if (process.env.NODE_ENV !== env) {
+  console.log('check');
+}
+      `,
+      errors: [
+        {
+          data: { comparedValue: 'non-literal' },
+          messageId: 'invalidComparison',
+        },
+      ],
+    },
+    // Should fail: Non-static comparison (reversed)
+    {
+      code: `
+const env = 'production';
+if (env === process.env.NODE_ENV) {
+  console.log('check');
+}
+      `,
+      errors: [
+        {
+          data: { comparedValue: 'non-literal' },
+          messageId: 'invalidComparison',
+        },
+      ],
+    },
+    // Should fail: Invalid usage (function call)
+    {
+      code: `
+foo(process.env.NODE_ENV);
+      `,
+      errors: [
+        {
+          messageId: 'invalidUsage',
+        },
+      ],
+    },
+    // Should fail: Invalid usage (assignment)
+    {
+      code: `
+const env = process.env.NODE_ENV;
+      `,
+      errors: [
+        {
+          messageId: 'invalidUsage',
+        },
+      ],
+    },
+    // Should fail: Invalid usage (template literal)
+    {
+      code: `
+const message = \`Environment: \${process.env.NODE_ENV}\`;
+      `,
+      errors: [
+        {
+          messageId: 'invalidUsage',
+        },
+      ],
+    },
+  ],
   valid: [
     // Should pass: Valid !== comparison with 'production'
     {
@@ -51,113 +158,6 @@ if (foo === 'baz') {
   console.log('test');
 }
       `,
-    },
-  ],
-  invalid: [
-    // Should fail: Comparing with 'development'
-    {
-      code: `
-if (process.env.NODE_ENV === 'development') {
-  console.log('dev');
-}
-      `,
-      errors: [
-        {
-          messageId: 'invalidComparison',
-          data: { comparedValue: 'development' },
-        },
-      ],
-    },
-    // Should fail: Comparing with 'test'
-    {
-      code: `
-if (process.env.NODE_ENV !== 'test') {
-  console.log('not test');
-}
-      `,
-      errors: [
-        {
-          messageId: 'invalidComparison',
-          data: { comparedValue: 'test' },
-        },
-      ],
-    },
-    // Should fail: Reversed comparison with 'development'
-    {
-      code: `
-if ('development' === process.env.NODE_ENV) {
-  console.log('dev');
-}
-      `,
-      errors: [
-        {
-          messageId: 'invalidComparison',
-          data: { comparedValue: 'development' },
-        },
-      ],
-    },
-    // Should fail: Non-static comparison (variable)
-    {
-      code: `
-const env = 'production';
-if (process.env.NODE_ENV !== env) {
-  console.log('check');
-}
-      `,
-      errors: [
-        {
-          messageId: 'invalidComparison',
-          data: { comparedValue: 'non-literal' },
-        },
-      ],
-    },
-    // Should fail: Non-static comparison (reversed)
-    {
-      code: `
-const env = 'production';
-if (env === process.env.NODE_ENV) {
-  console.log('check');
-}
-      `,
-      errors: [
-        {
-          messageId: 'invalidComparison',
-          data: { comparedValue: 'non-literal' },
-        },
-      ],
-    },
-    // Should fail: Invalid usage (function call)
-    {
-      code: `
-foo(process.env.NODE_ENV);
-      `,
-      errors: [
-        {
-          messageId: 'invalidUsage',
-        },
-      ],
-    },
-    // Should fail: Invalid usage (assignment)
-    {
-      code: `
-const env = process.env.NODE_ENV;
-      `,
-      errors: [
-        {
-          messageId: 'invalidUsage',
-        },
-      ],
-    },
-    // Should fail: Invalid usage (template literal)
-    {
-      code: `
-const message = \`Environment: \${process.env.NODE_ENV}\`;
-      `,
-      errors: [
-        {
-          messageId: 'invalidUsage',
-        },
-      ],
     },
   ],
 });

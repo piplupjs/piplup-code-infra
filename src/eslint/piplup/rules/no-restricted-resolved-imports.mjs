@@ -24,30 +24,6 @@ const resolve = /** @type {any} */ (resolveModule).default || resolveModule;
  * Works with both ESM (import) and CommonJS (require) imports.
  */
 export default /** @type {import('eslint').Rule.RuleModule} */ ({
-  meta: {
-    docs: {
-      description: 'Disallow imports that resolve to certain patterns.',
-    },
-    messages: {
-      restrictedResolvedImport:
-        'Importing from "{{importSource}}" is restricted because it resolves to "{{resolvedPath}}", which matches the pattern "{{pattern}}".{{customMessage}}',
-    },
-    type: 'suggestion',
-    schema: [
-      {
-        type: 'array',
-        items: {
-          type: 'object',
-          properties: {
-            pattern: { type: 'string' },
-            message: { type: 'string' },
-          },
-          required: ['pattern'],
-          additionalProperties: false,
-        },
-      },
-    ],
-  },
   create(context) {
     const options = context.options[0] || [];
 
@@ -70,18 +46,18 @@ export default /** @type {import('eslint').Rule.RuleModule} */ ({
 
         // Check each pattern against the resolved path
         for (const option of options) {
-          const { pattern, message = '' } = option;
+          const { message = '', pattern } = option;
 
           if (minimatch(normalizedPath, pattern)) {
             context.report({
-              node,
-              messageId: 'restrictedResolvedImport',
               data: {
-                importSource: source.value,
-                resolvedPath: normalizedPath,
-                pattern,
                 customMessage: message ? ` ${message}` : '',
+                importSource: source.value,
+                pattern,
+                resolvedPath: normalizedPath,
               },
+              messageId: 'restrictedResolvedImport',
+              node,
             });
 
             // Stop after first match
@@ -92,5 +68,29 @@ export default /** @type {import('eslint').Rule.RuleModule} */ ({
 
       { commonjs: true, esmodule: true },
     ); // This handles both require() and import statements
+  },
+  meta: {
+    docs: {
+      description: 'Disallow imports that resolve to certain patterns.',
+    },
+    messages: {
+      restrictedResolvedImport:
+        'Importing from "{{importSource}}" is restricted because it resolves to "{{resolvedPath}}", which matches the pattern "{{pattern}}".{{customMessage}}',
+    },
+    schema: [
+      {
+        items: {
+          additionalProperties: false,
+          properties: {
+            message: { type: 'string' },
+            pattern: { type: 'string' },
+          },
+          required: ['pattern'],
+          type: 'object',
+        },
+        type: 'array',
+      },
+    ],
+    type: 'suggestion',
   },
 });

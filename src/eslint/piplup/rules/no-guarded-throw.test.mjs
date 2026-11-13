@@ -10,62 +10,6 @@ const ruleTester = new eslint.RuleTester({
 });
 
 ruleTester.run('no-guarded-throw', rule, {
-  valid: [
-    // Should pass: Unconditional throw
-    {
-      code: `
-throw new Error('Something went wrong');
-      `,
-    },
-    // Should pass: Throw inside a non-NODE_ENV conditional
-    {
-      code: `
-if (value == null) {
-  throw new TypeError('value is required');
-}
-      `,
-    },
-    // Should pass: Throw inside a catch block (no NODE_ENV guard)
-    {
-      code: `
-try {
-  doSomething();
-} catch (error) {
-  throw new Error('Failed');
-}
-      `,
-    },
-    // Should pass: Throw inside arrow function inside NODE_ENV guard
-    {
-      code: `
-if (process.env.NODE_ENV !== 'production') {
-  const fn = () => {
-    throw new Error('inside arrow function');
-  };
-}
-      `,
-    },
-    // Should pass: Throw inside function expression inside NODE_ENV guard
-    {
-      code: `
-if (process.env.NODE_ENV !== 'production') {
-  const fn = function () {
-    throw new Error('inside function expression');
-  };
-}
-      `,
-    },
-    // Should pass: Throw inside function declaration inside NODE_ENV guard
-    {
-      code: `
-if (process.env.NODE_ENV !== 'production') {
-  function validate() {
-    throw new Error('inside function declaration');
-  }
-}
-      `,
-    },
-  ],
   invalid: [
     // Should fail: Throw inside !== 'production' guard
     {
@@ -202,6 +146,62 @@ if (process.env.NODE_ENV !== 'production') {
 }
       `,
       errors: [{ messageId: 'guardedThrow' }],
+    },
+  ],
+  valid: [
+    // Should pass: Unconditional throw
+    {
+      code: `
+throw new Error('Something went wrong');
+      `,
+    },
+    // Should pass: Throw inside a non-NODE_ENV conditional
+    {
+      code: `
+if (value == null) {
+  throw new TypeError('value is required');
+}
+      `,
+    },
+    // Should pass: Throw inside a catch block (no NODE_ENV guard)
+    {
+      code: `
+try {
+  doSomething();
+} catch (error) {
+  throw new Error('Failed');
+}
+      `,
+    },
+    // Should pass: Throw inside arrow function inside NODE_ENV guard
+    {
+      code: `
+if (process.env.NODE_ENV !== 'production') {
+  const fn = () => {
+    throw new Error('inside arrow function');
+  };
+}
+      `,
+    },
+    // Should pass: Throw inside function expression inside NODE_ENV guard
+    {
+      code: `
+if (process.env.NODE_ENV !== 'production') {
+  const fn = function () {
+    throw new Error('inside function expression');
+  };
+}
+      `,
+    },
+    // Should pass: Throw inside function declaration inside NODE_ENV guard
+    {
+      code: `
+if (process.env.NODE_ENV !== 'production') {
+  function validate() {
+    throw new Error('inside function declaration');
+  }
+}
+      `,
     },
   ],
 });

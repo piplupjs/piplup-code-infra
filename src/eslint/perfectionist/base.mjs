@@ -1,6 +1,6 @@
 import { defineConfig } from 'eslint/config';
-import eslintPluginPerfectionist from 'eslint-plugin-perfectionist';
 
+import perfectionistPlugin from '../../lint/plugins/perfectionist.mjs';
 import { EXTENSION_JS, EXTENSION_TS } from '../extensions.mjs';
 
 /**
@@ -9,6 +9,7 @@ import { EXTENSION_JS, EXTENSION_TS } from '../extensions.mjs';
 export function createPerfectionistConfig() {
   return defineConfig([
     {
+      files: [`**/*${EXTENSION_TS}`, `**/*${EXTENSION_JS}`],
       languageOptions: {
         parserOptions: {
           ecmaFeatures: {
@@ -18,14 +19,14 @@ export function createPerfectionistConfig() {
       },
       name: 'perfectionist',
       plugins: {
-        perfectionist: eslintPluginPerfectionist,
+        perfectionist: perfectionistPlugin,
       },
-      files: [`**/*${EXTENSION_TS}`, `**/*${EXTENSION_JS}`],
       rules: {
         'perfectionist/sort-array-includes': [
           'error',
           {
-            groupKind: 'literals-first',
+            // Literals first. Spread elements split the array into separately sorted parts.
+            groups: ['literal'],
             ignoreCase: true,
             order: 'asc',
             type: 'alphabetical',
@@ -55,7 +56,7 @@ export function createPerfectionistConfig() {
         'perfectionist/sort-jsx-props': [
           'error',
           {
-            groups: ['multiline', 'unknown', 'shorthand'],
+            groups: ['multiline-prop', 'unknown', 'shorthand-prop'],
             order: 'asc',
             type: 'natural',
           },
@@ -77,7 +78,7 @@ export function createPerfectionistConfig() {
         'perfectionist/sort-object-types': [
           'error',
           {
-            customGroups: {},
+            customGroups: [],
             groups: [],
             ignoreCase: true,
             order: 'asc',

@@ -61,17 +61,36 @@ export default /** @type {import('eslint').Rule.RuleModule} */ ({
      */
     function reportForbiddenApi(node, apiName) {
       context.report({
-        node,
-        message: `Using '${apiName}' is forbidden if the file doesn't have a 'use client' directive.`,
         fix: createFix,
+        message: `Using '${apiName}' is forbidden if the file doesn't have a 'use client' directive.`,
+        node,
       });
     }
 
     return {
-      /** @param {import('eslint').AST.Program} node */
-      Program(node) {
-        hasUseServerDirective = hasDirective(node, 'use server');
-        hasUseClientDirective = hasDirective(node, 'use client');
+      CallExpression(node) {
+        if (hasUseClientDirective) {
+          return;
+        }
+
+        // Check for React.* API calls
+        if (
+          node.callee.type === 'MemberExpression' &&
+          node.callee.object.type === 'Identifier' &&
+          node.callee.object.name === 'React' &&
+          node.callee.property.type === 'Identifier' &&
+          REACT_CLIENT_APIS.has(node.callee.property.name)
+        ) {
+          reportForbiddenApi(node, `React.${node.callee.property.name}`);
+        }
+
+        // Check for direct calls to forbidden APIs
+        if (
+          node.callee.type === 'Identifier' &&
+          SERVER_COMPONENT_FORBIDDEN_APIS.has(node.callee.name)
+        ) {
+          reportForbiddenApi(node, node.callee.name);
+        }
       },
       ImportDeclaration(node) {
         if (hasUseClientDirective) {
@@ -104,29 +123,10 @@ export default /** @type {import('eslint').Rule.RuleModule} */ ({
           }
         }
       },
-      CallExpression(node) {
-        if (hasUseClientDirective) {
-          return;
-        }
-
-        // Check for React.* API calls
-        if (
-          node.callee.type === 'MemberExpression' &&
-          node.callee.object.type === 'Identifier' &&
-          node.callee.object.name === 'React' &&
-          node.callee.property.type === 'Identifier' &&
-          REACT_CLIENT_APIS.has(node.callee.property.name)
-        ) {
-          reportForbiddenApi(node, `React.${node.callee.property.name}`);
-        }
-
-        // Check for direct calls to forbidden APIs
-        if (
-          node.callee.type === 'Identifier' &&
-          SERVER_COMPONENT_FORBIDDEN_APIS.has(node.callee.name)
-        ) {
-          reportForbiddenApi(node, node.callee.name);
-        }
+      /** @param {import('eslint').AST.Program} node */
+      Program(node) {
+        hasUseServerDirective = hasDirective(node, 'use server');
+        hasUseClientDirective = hasDirective(node, 'use client');
       },
     };
   },

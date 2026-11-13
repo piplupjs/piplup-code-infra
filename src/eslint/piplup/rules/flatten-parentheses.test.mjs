@@ -10,6 +10,207 @@ const ruleTester = new RuleTester({
 });
 
 ruleTester.run('flatten-parentheses', rule, {
+  invalid: [
+    // Basic union flattening - example from the problem statement
+    {
+      code: `type T = (1 | 2 | 3) | 4;`,
+      errors: [
+        {
+          column: 11,
+          line: 1,
+          messageId: 'flattenParentheses',
+        },
+      ],
+      output: `type T = 1 | 2 | 3 | 4;`,
+    },
+
+    // Union on the right side
+    {
+      code: `type T = 1 | (2 | 3 | 4);`,
+      errors: [
+        {
+          line: 1,
+          messageId: 'flattenParentheses',
+        },
+      ],
+      output: `type T = 1 | 2 | 3 | 4;`,
+    },
+
+    // Multiple parenthesized unions
+    {
+      code: `type T = (1 | 2) | (3 | 4);`,
+      errors: [
+        {
+          line: 1,
+          messageId: 'flattenParentheses',
+        },
+        {
+          line: 1,
+          messageId: 'flattenParentheses',
+        },
+      ],
+      output: `type T = 1 | 2 | 3 | 4;`,
+    },
+
+    // Intersection flattening
+    {
+      code: `type T = (A & B & C) & D;`,
+      errors: [
+        {
+          line: 1,
+          messageId: 'flattenParentheses',
+        },
+      ],
+      output: `type T = A & B & C & D;`,
+    },
+
+    // Intersection on the right
+    {
+      code: `type T = A & (B & C & D);`,
+      errors: [
+        {
+          line: 1,
+          messageId: 'flattenParentheses',
+        },
+      ],
+      output: `type T = A & B & C & D;`,
+    },
+
+    // Multiple parenthesized intersections
+    {
+      code: `type T = (A & B) & (C & D);`,
+      errors: [
+        {
+          line: 1,
+          messageId: 'flattenParentheses',
+        },
+        {
+          line: 1,
+          messageId: 'flattenParentheses',
+        },
+      ],
+      output: `type T = A & B & C & D;`,
+    },
+
+    // With type aliases
+    {
+      code: `type Union = (string | number) | boolean;`,
+      errors: [
+        {
+          line: 1,
+          messageId: 'flattenParentheses',
+        },
+      ],
+      output: `type Union = string | number | boolean;`,
+    },
+
+    // In type parameters
+    {
+      code: `type T<U> = (U | null) | undefined;`,
+      errors: [
+        {
+          line: 1,
+          messageId: 'flattenParentheses',
+        },
+      ],
+      output: `type T<U> = U | null | undefined;`,
+    },
+
+    // With whitespace (trailing space left for Prettier to clean up)
+    {
+      code: `type T = ( A | B ) | C;`,
+      errors: [
+        {
+          line: 1,
+          messageId: 'flattenParentheses',
+        },
+      ],
+      output: `type T = A | B  | C;`,
+    },
+
+    // Nested unions - multiple fix passes needed due to overlapping ranges
+    {
+      code: `type T = ((A | B) | C) | D;`,
+      errors: [
+        {
+          line: 1,
+          messageId: 'flattenParentheses',
+        },
+        {
+          line: 1,
+          messageId: 'flattenParentheses',
+        },
+      ],
+      output: [`type T = (A | B) | C | D;`, `type T = A | B | C | D;`],
+    },
+
+    // Complex type names
+    {
+      code: `type Result = (Success<Data> | Error<Message>) | Loading;`,
+      errors: [
+        {
+          line: 1,
+          messageId: 'flattenParentheses',
+        },
+      ],
+      output: `type Result = Success<Data> | Error<Message> | Loading;`,
+    },
+
+    // Multiline union (Prettier cleans up extra whitespace)
+    {
+      code: `type T = (\n  A | B\n) | C;`,
+      errors: [
+        {
+          messageId: 'flattenParentheses',
+        },
+      ],
+      output: `type T = A | B\n | C;`,
+    },
+
+    // Leading block comment inside parentheses - preserved in output
+    {
+      code: `type T = (/* comment */ A | B) | C;`,
+      errors: [
+        {
+          messageId: 'flattenParentheses',
+        },
+      ],
+      output: `type T = /* comment */ A | B | C;`,
+    },
+
+    // Trailing block comment inside parentheses - preserved in output
+    {
+      code: `type T = (A | B /* comment */) | C;`,
+      errors: [
+        {
+          messageId: 'flattenParentheses',
+        },
+      ],
+      output: `type T = A | B /* comment */ | C;`,
+    },
+
+    // Trailing line comment - newline preserved so | C continues on next line
+    {
+      code: `type T = (A | B // comment\n) | C;`,
+      errors: [
+        {
+          messageId: 'flattenParentheses',
+        },
+      ],
+      output: `type T = A | B // comment\n | C;`,
+    },
+
+    // Multiline union with leading pipes inside parentheses
+    {
+      code: 'type T =\n  | (\n      | boolean\n      | string\n    )\n  | undefined;',
+      errors: [
+        {
+          messageId: 'flattenParentheses',
+        },
+      ],
+      output: 'type T =\n  | boolean\n      | string\n    \n  | undefined;',
+    },
+  ],
   valid: [
     // Simple union without parentheses
     `type T = 1 | 2 | 3;`,
@@ -41,206 +242,5 @@ ruleTester.run('flatten-parentheses', rule, {
     // Mixed operators - parentheses are needed
     `type T = A | (B & C);`,
     `type T = (A | B) & (C | D) | E;`,
-  ],
-  invalid: [
-    // Basic union flattening - example from the problem statement
-    {
-      code: `type T = (1 | 2 | 3) | 4;`,
-      output: `type T = 1 | 2 | 3 | 4;`,
-      errors: [
-        {
-          messageId: 'flattenParentheses',
-          line: 1,
-          column: 11,
-        },
-      ],
-    },
-
-    // Union on the right side
-    {
-      code: `type T = 1 | (2 | 3 | 4);`,
-      output: `type T = 1 | 2 | 3 | 4;`,
-      errors: [
-        {
-          messageId: 'flattenParentheses',
-          line: 1,
-        },
-      ],
-    },
-
-    // Multiple parenthesized unions
-    {
-      code: `type T = (1 | 2) | (3 | 4);`,
-      output: `type T = 1 | 2 | 3 | 4;`,
-      errors: [
-        {
-          messageId: 'flattenParentheses',
-          line: 1,
-        },
-        {
-          messageId: 'flattenParentheses',
-          line: 1,
-        },
-      ],
-    },
-
-    // Intersection flattening
-    {
-      code: `type T = (A & B & C) & D;`,
-      output: `type T = A & B & C & D;`,
-      errors: [
-        {
-          messageId: 'flattenParentheses',
-          line: 1,
-        },
-      ],
-    },
-
-    // Intersection on the right
-    {
-      code: `type T = A & (B & C & D);`,
-      output: `type T = A & B & C & D;`,
-      errors: [
-        {
-          messageId: 'flattenParentheses',
-          line: 1,
-        },
-      ],
-    },
-
-    // Multiple parenthesized intersections
-    {
-      code: `type T = (A & B) & (C & D);`,
-      output: `type T = A & B & C & D;`,
-      errors: [
-        {
-          messageId: 'flattenParentheses',
-          line: 1,
-        },
-        {
-          messageId: 'flattenParentheses',
-          line: 1,
-        },
-      ],
-    },
-
-    // With type aliases
-    {
-      code: `type Union = (string | number) | boolean;`,
-      output: `type Union = string | number | boolean;`,
-      errors: [
-        {
-          messageId: 'flattenParentheses',
-          line: 1,
-        },
-      ],
-    },
-
-    // In type parameters
-    {
-      code: `type T<U> = (U | null) | undefined;`,
-      output: `type T<U> = U | null | undefined;`,
-      errors: [
-        {
-          messageId: 'flattenParentheses',
-          line: 1,
-        },
-      ],
-    },
-
-    // With whitespace (trailing space left for Prettier to clean up)
-    {
-      code: `type T = ( A | B ) | C;`,
-      output: `type T = A | B  | C;`,
-      errors: [
-        {
-          messageId: 'flattenParentheses',
-          line: 1,
-        },
-      ],
-    },
-
-    // Nested unions - multiple fix passes needed due to overlapping ranges
-    {
-      code: `type T = ((A | B) | C) | D;`,
-      output: [`type T = (A | B) | C | D;`, `type T = A | B | C | D;`],
-      errors: [
-        {
-          messageId: 'flattenParentheses',
-          line: 1,
-        },
-        {
-          messageId: 'flattenParentheses',
-          line: 1,
-        },
-      ],
-    },
-
-    // Complex type names
-    {
-      code: `type Result = (Success<Data> | Error<Message>) | Loading;`,
-      output: `type Result = Success<Data> | Error<Message> | Loading;`,
-      errors: [
-        {
-          messageId: 'flattenParentheses',
-          line: 1,
-        },
-      ],
-    },
-
-    // Multiline union (Prettier cleans up extra whitespace)
-    {
-      code: `type T = (\n  A | B\n) | C;`,
-      output: `type T = A | B\n | C;`,
-      errors: [
-        {
-          messageId: 'flattenParentheses',
-        },
-      ],
-    },
-
-    // Leading block comment inside parentheses - preserved in output
-    {
-      code: `type T = (/* comment */ A | B) | C;`,
-      output: `type T = /* comment */ A | B | C;`,
-      errors: [
-        {
-          messageId: 'flattenParentheses',
-        },
-      ],
-    },
-
-    // Trailing block comment inside parentheses - preserved in output
-    {
-      code: `type T = (A | B /* comment */) | C;`,
-      output: `type T = A | B /* comment */ | C;`,
-      errors: [
-        {
-          messageId: 'flattenParentheses',
-        },
-      ],
-    },
-
-    // Trailing line comment - newline preserved so | C continues on next line
-    {
-      code: `type T = (A | B // comment\n) | C;`,
-      output: `type T = A | B // comment\n | C;`,
-      errors: [
-        {
-          messageId: 'flattenParentheses',
-        },
-      ],
-    },
-
-    // Multiline union with leading pipes inside parentheses
-    {
-      code: 'type T =\n  | (\n      | boolean\n      | string\n    )\n  | undefined;',
-      output: 'type T =\n  | boolean\n      | string\n    \n  | undefined;',
-      errors: [
-        {
-          messageId: 'flattenParentheses',
-        },
-      ],
-    },
   ],
 });

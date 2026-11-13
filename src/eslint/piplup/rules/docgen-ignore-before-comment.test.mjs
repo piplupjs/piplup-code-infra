@@ -10,12 +10,6 @@ const ruleTester = new eslint.RuleTester({
 });
 
 ruleTester.run('ignore-before-comment', rule, {
-  valid: [
-    '\n/**\n * @ignore\n */\n',
-    '\n/**\n * @ignore\n * Comment.\n */\n',
-    '\n/**\n * @ignore\n * Multi-line\n * comment.\n */\n',
-    '\n  /**\n   * @ignore\n   * Indented\n   * multi-line\n   * comment.\n   */\n',
-  ],
   invalid: [
     {
       code: '\n/**\n * Comment.\n * @ignore\n */\n',
@@ -49,5 +43,11 @@ ruleTester.run('ignore-before-comment', rule, {
         },
       ],
     },
+  ],
+  valid: [
+    '\n/**\n * @ignore\n */\n',
+    '\n/**\n * @ignore\n * Comment.\n */\n',
+    '\n/**\n * @ignore\n * Multi-line\n * comment.\n */\n',
+    '\n  /**\n   * @ignore\n   * Indented\n   * multi-line\n   * comment.\n   */\n',
   ],
 });

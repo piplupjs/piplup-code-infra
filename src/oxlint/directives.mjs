@@ -45,10 +45,10 @@ export function parseDirectives(comments) {
       .map((rule) => rule.trim())
       .filter(Boolean);
     directives.push({
+      end: comment.loc.end,
       kind,
       rules: rules.length > 0 ? rules : null,
       start: comment.loc.start,
-      end: comment.loc.end,
     });
   }
   return directives;

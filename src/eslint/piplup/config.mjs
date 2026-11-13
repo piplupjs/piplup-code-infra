@@ -399,12 +399,12 @@ export function createCoreConfig(options = {}) {
           {
             args: 'after-used',
             argsIgnorePattern: '^_',
+            caughtErrors: 'none',
             caughtErrorsIgnorePattern: '^(_|ignore)',
             destructuredArrayIgnorePattern: '^_',
-            varsIgnorePattern: '^(_|React$)',
-            caughtErrors: 'none',
             ignoreRestSiblings: true,
             vars: 'all',
+            varsIgnorePattern: '^(_|React$)',
           },
         ],
         '@typescript-eslint/no-use-before-define': [
@@ -446,18 +446,8 @@ export function createCoreConfig(options = {}) {
         // We are a library, we need to support it too
         'jsx-a11y/no-autofocus': 'off',
         'lines-around-directive': 'off',
-        'piplup/add-undef-to-optional': 'off',
-        'piplup/consistent-production-guard': 'error',
-        'piplup/docgen-ignore-before-comment': 'error',
-        // Opt-in: many React projects name component files in PascalCase.
-        'piplup/filename-case': 'off',
-        'piplup/flatten-parentheses': 'warn',
-        'piplup/no-guarded-throw': 'error',
-        'piplup/no-presentation-role': 'off',
-        'piplup/straight-quotes': 'off',
         // Just as bad as "max components per file"
         'max-classes-per-file': 'off',
-
         // Too interruptive
         'no-alert': 'error',
         // Allow warn and error for dev environments
@@ -466,7 +456,6 @@ export function createCoreConfig(options = {}) {
         'no-continue': 'off',
         'no-implied-eval': 'error',
         'no-param-reassign': 'off', // It's fine.
-
         // Use the proptype inheritance chain
         'no-prototype-builtins': 'off',
         'no-redeclare': 'off',
@@ -528,8 +517,19 @@ export function createCoreConfig(options = {}) {
           },
         ],
         'no-unused-vars': 'off',
-
         'no-use-before-define': 'off',
+
+        'piplup/add-undef-to-optional': 'off',
+        'piplup/consistent-production-guard': 'error',
+
+        'piplup/docgen-ignore-before-comment': 'error',
+        // Opt-in: many React projects name component files in PascalCase.
+        'piplup/filename-case': 'off',
+        'piplup/flatten-parentheses': 'warn',
+        'piplup/no-guarded-throw': 'error',
+        'piplup/no-presentation-role': 'off',
+
+        'piplup/straight-quotes': 'off',
         'prefer-arrow-callback': ['error', { allowNamedFunctions: true }],
 
         // Destructuring harm grep potential.
@@ -619,8 +619,8 @@ export function createCoreConfig(options = {}) {
       },
     },
     {
-      name: 'piplup-core-config/dts',
       files: [`**/*${EXTENSION_DTS}`],
+      name: 'piplup-core-config/dts',
       rules: {
         '@typescript-eslint/consistent-type-imports': 'off',
       },

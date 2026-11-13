@@ -10,13 +10,21 @@ import packageJson from 'eslint-plugin-package-json';
 export function createPackageJsonConfig() {
   return defineConfig([
     {
-      name: 'package.json files',
+      extends: [packageJson.configs.recommended],
       files: ['**/package.json'],
       ignores: ['**/__fixtures__/**'],
-      extends: [packageJson.configs.recommended],
+      name: 'package.json files',
       rules: {
+        // npm only auto-includes "main" when it has no "./" prefix; removing it from "files" can drop the entry point.
+        'package-json/no-redundant-files': 'off',
         'package-json/require-author': ['error', { ignorePrivate: true }],
         'package-json/require-description': ['error', { ignorePrivate: true }],
+        // CLI-only packages have no "exports".
+        'package-json/require-exports': 'off',
+        // Packages built into a separate directory get these fields in the generated package.json.
+        'package-json/require-files': 'off',
+        'package-json/require-sideEffects': 'off',
+        'package-json/require-type': 'off',
         'package-json/restrict-private-properties': [
           'error',
           // `publishConfig.directory` is allowed, also for private packages.
@@ -24,18 +32,10 @@ export function createPackageJsonConfig() {
         ],
         // Condition order in "exports" is significant, and scripts are grouped by purpose.
         'package-json/sort-collections': 'off',
-        // Packages built into a separate directory get these fields in the generated package.json.
-        'package-json/require-files': 'off',
-        'package-json/require-sideEffects': 'off',
-        'package-json/require-type': 'off',
         // Peer dependencies are installed once at the workspace root.
         'package-json/specify-peers-locally': 'off',
-        // CLI-only packages have no "exports".
-        'package-json/require-exports': 'off',
         // Rejects the object form of "browser", which the browser field spec allows.
         'package-json/valid-browser': 'off',
-        // npm only auto-includes "main" when it has no "./" prefix; removing it from "files" can drop the entry point.
-        'package-json/no-redundant-files': 'off',
       },
     },
   ]);

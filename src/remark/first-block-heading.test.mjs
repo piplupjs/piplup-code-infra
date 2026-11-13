@@ -17,8 +17,8 @@ function lint(input, options) {
     .use(plugin, options)
     .processSync(input);
   return file.messages.map((message) => ({
-    reason: message.reason,
     line: message.line ?? 0,
+    reason: message.reason,
   }));
 }
 
@@ -34,8 +34,8 @@ function lintMdx(input, options) {
     .use(plugin, options)
     .processSync(input);
   return file.messages.map((message) => ({
-    reason: message.reason,
     line: message.line ?? 0,
+    reason: message.reason,
   }));
 }
 

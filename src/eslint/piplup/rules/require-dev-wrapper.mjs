@@ -32,32 +32,6 @@ import {
  * @type {import('eslint').Rule.RuleModule}
  */
 const rule = {
-  meta: {
-    type: 'problem',
-    docs: {
-      description:
-        'Enforce that certain function calls are wrapped with a production check to prevent them from ending up in production bundles',
-    },
-    messages: {
-      missingDevWrapper:
-        "Function `{{ functionName }}` must be wrapped with a production check (e.g., `if (process.env.NODE_ENV !== 'production')`) to prevent it from ending up in production bundles.",
-    },
-    schema: [
-      {
-        type: 'object',
-        properties: {
-          functionNames: {
-            type: 'array',
-            items: {
-              type: 'string',
-            },
-            default: ['warnOnce', 'warn', 'checkSlot'],
-          },
-        },
-        additionalProperties: false,
-      },
-    ],
-  },
   create(context) {
     const options = context.options[0] || {};
     const functionNames = options.functionNames || ['warnOnce', 'warn', 'checkSlot'];
@@ -123,16 +97,42 @@ const rule = {
         if (node.callee.type === 'Identifier' && functionNames.includes(node.callee.name)) {
           if (!isWrappedInProductionCheck(node)) {
             context.report({
-              node,
-              messageId: 'missingDevWrapper',
               data: {
                 functionName: node.callee.name,
               },
+              messageId: 'missingDevWrapper',
+              node,
             });
           }
         }
       },
     };
+  },
+  meta: {
+    docs: {
+      description:
+        'Enforce that certain function calls are wrapped with a production check to prevent them from ending up in production bundles',
+    },
+    messages: {
+      missingDevWrapper:
+        "Function `{{ functionName }}` must be wrapped with a production check (e.g., `if (process.env.NODE_ENV !== 'production')`) to prevent it from ending up in production bundles.",
+    },
+    schema: [
+      {
+        additionalProperties: false,
+        properties: {
+          functionNames: {
+            default: ['warnOnce', 'warn', 'checkSlot'],
+            items: {
+              type: 'string',
+            },
+            type: 'array',
+          },
+        },
+        type: 'object',
+      },
+    ],
+    type: 'problem',
   },
 };
 

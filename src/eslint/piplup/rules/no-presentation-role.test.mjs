@@ -13,7 +13,6 @@ const ruleTester = new eslint.RuleTester({
 });
 
 ruleTester.run('no-presentation-role', rule, {
-  valid: ['<div role="none" />', '<div role="button" />', '<div />', '<div role={presentation} />'],
   invalid: [
     {
       code: '<div role="presentation" />',
@@ -31,4 +30,5 @@ ruleTester.run('no-presentation-role', rule, {
       output: '<table role="none"><tr><td /></tr></table>',
     },
   ],
+  valid: ['<div role="none" />', '<div role="button" />', '<div />', '<div role={presentation} />'],
 });

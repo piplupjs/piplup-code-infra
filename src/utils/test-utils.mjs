@@ -13,7 +13,7 @@ import { onTestFinished } from 'vitest';
 export async function makeTempDir() {
   const tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), 'code-infra-test-'));
   onTestFinished(async () => {
-    await fs.rm(tmpDir, { recursive: true, force: true });
+    await fs.rm(tmpDir, { force: true, recursive: true });
   });
   return tmpDir;
 }

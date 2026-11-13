@@ -35,11 +35,11 @@ describe('createRemarkConfig definition comments', () => {
     const result = await lint(input, { allowDefinitionComments: true });
 
     expect(
-      result.messages.map(({ ruleId, source, fatal, line }) => ({ ruleId, source, fatal, line })),
+      result.messages.map(({ fatal, line, ruleId, source }) => ({ fatal, line, ruleId, source })),
     ).toEqual([
-      { ruleId: 'no-unused-definitions', source: 'remark-lint', fatal: true, line: 9 },
-      { ruleId: 'no-empty-url', source: 'remark-lint', fatal: true, line: 7 },
-      { ruleId: 'no-empty-url', source: 'remark-lint', fatal: true, line: 9 },
+      { fatal: true, line: 9, ruleId: 'no-unused-definitions', source: 'remark-lint' },
+      { fatal: true, line: 7, ruleId: 'no-empty-url', source: 'remark-lint' },
+      { fatal: true, line: 9, ruleId: 'no-empty-url', source: 'remark-lint' },
     ]);
     expect(String(result)).toContain("[//]: # 'Generated index marker'");
     expect(String(result)).toContain("[//]: types.ts 'Generated type marker'");
@@ -71,8 +71,8 @@ describe('createRemarkConfig definition comments', () => {
         }),
       )
       .process({ path: 'example.mdx', value: "# Example\n\n[//]: # 'Comment'\n\n[Empty]()\n" });
-    expect(result.messages.map(({ ruleId, fatal }) => ({ ruleId, fatal }))).toEqual([
-      { ruleId: 'no-empty-url', fatal: false },
+    expect(result.messages.map(({ fatal, ruleId }) => ({ fatal, ruleId }))).toEqual([
+      { fatal: false, ruleId: 'no-empty-url' },
     ]);
   });
 });
@@ -96,8 +96,8 @@ describe('createRemarkConfig with eslint --fix', () => {
     const eslint = new ESLint({
       cwd,
       fix: true,
-      overrideConfigFile: true,
       overrideConfig: createBaseConfig({ baseDirectory: cwd }),
+      overrideConfigFile: true,
     });
     const [result] = await eslint.lintFiles([fileName]);
     return result;

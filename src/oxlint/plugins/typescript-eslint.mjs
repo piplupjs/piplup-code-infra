@@ -8,8 +8,8 @@ import { withEslintDirectives } from './with-eslint-directives.mjs';
  * thing that parser provides when no TypeScript project is configured.
  */
 const parserServices = {
-  program: null,
   esTreeNodeToTSNodeMap: new WeakMap(),
+  program: null,
   tsNodeToESTreeNodeMap: new WeakMap(),
 };
 
@@ -22,8 +22,8 @@ function withParserServices(context) {
     parserServices: { value: parserServices },
   });
   return Object.create(context, {
-    sourceCode: { value: sourceCode },
     parserServices: { value: parserServices },
+    sourceCode: { value: sourceCode },
   });
 }
 

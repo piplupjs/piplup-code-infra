@@ -9,18 +9,19 @@ import * as mdx from 'eslint-plugin-mdx';
 import globals from 'globals';
 import * as tseslint from 'typescript-eslint';
 
-import { configs as compatConfigs } from '../plugins/compat.mjs';
-import { configs as importConfigs } from '../plugins/import.mjs';
-import { configs as jsxA11yConfigs } from '../plugins/jsx-a11y.mjs';
-import nPlugin from '../plugins/n.mjs';
-import { configs as reactCompilerConfigs } from '../plugins/react-compiler.mjs';
-import { configs as reactHooksConfigs } from '../plugins/react-hooks.mjs';
-import { configs as reactConfigs } from '../plugins/react.mjs';
+import { configs as compatConfigs } from '../lint/plugins/compat.mjs';
+import { configs as importConfigs } from '../lint/plugins/import.mjs';
+import { configs as jsxA11yConfigs } from '../lint/plugins/jsx-a11y.mjs';
+import nPlugin from '../lint/plugins/n.mjs';
+import { configs as reactCompilerConfigs } from '../lint/plugins/react-compiler.mjs';
+import { configs as reactHooksConfigs } from '../lint/plugins/react-hooks.mjs';
+import { configs as reactConfigs } from '../lint/plugins/react.mjs';
 
 import { EXTENSION_TS } from './extensions.mjs';
 import { createJsonConfig } from './json-config.mjs';
 import { createNodeSupportConfig } from './node-support-config.mjs';
 import { createPackageJsonConfig } from './package-json-config.mjs';
+import { createPerfectionistConfig } from './perfectionist/base.mjs';
 import { createCoreConfig } from './piplup/config.mjs';
 import piplupPlugin from './piplup/index.mjs';
 
@@ -44,16 +45,15 @@ function includeIgnoreIfExists(filePath, description) {
  * @returns {import('eslint').Linter.Config[]}
  */
 export function createBaseConfig({
-  enableReactCompiler = false,
-  consistentTypeImports = true,
-  markdown = true,
   baseDirectory = process.cwd(),
+  consistentTypeImports = true,
+  enableReactCompiler = false,
+  markdown = true,
 } = {}) {
   const browserslistrcPath = path.join(baseDirectory, '.browserslistrc');
 
   return defineConfig([
     {
-      name: 'settings',
       languageOptions: {
         ecmaVersion: 7,
         globals: {
@@ -62,21 +62,22 @@ export function createBaseConfig({
           ...globals.node,
         },
       },
+      name: 'settings',
       plugins: {
-        piplup: piplupPlugin,
         // Registered once for all files, so consumers can enable `n/*` rules without registering
         // a second, possibly different, instance of the plugin.
         n: nPlugin,
+        piplup: piplupPlugin,
       },
       settings: {
-        react: {
-          version: 'detect',
-        },
         browserslistOpts: {
           // Fall back to browserslist's own config lookup when the project has no .browserslistrc.
           config: fs.existsSync(browserslistrcPath) ? browserslistrcPath : undefined,
           env: 'stable',
           ignoreUnknownVersions: true,
+        },
+        react: {
+          version: 'detect',
         },
       },
     },
@@ -102,8 +103,6 @@ export function createBaseConfig({
         ]
       : [],
     {
-      name: 'Base config',
-      files: [`**/*${EXTENSION_TS}`],
       extends: defineConfig([
         eslintJs.configs.recommended,
         importConfigs.recommended,
@@ -116,8 +115,8 @@ export function createBaseConfig({
         enableReactCompiler ? reactCompilerConfigs.recommended : {},
         compatConfigs.recommended,
         {
+          extends: createCoreConfig({ consistentTypeImports, enableReactCompiler }),
           name: 'core',
-          extends: createCoreConfig({ enableReactCompiler, consistentTypeImports }),
         },
         // Disallow TypeScript namespaces: they can produce non-portable declaration types and break
         // some bundlers, and tooling support for them is poor. Treat them as deprecated.
@@ -129,21 +128,21 @@ export function createBaseConfig({
         // Part of the migration away from airbnb config. Turned off initially.
         {
           rules: {
+            '@typescript-eslint/no-empty-object-type': 'off',
             '@typescript-eslint/no-explicit-any': 'off',
             '@typescript-eslint/no-unsafe-function-type': 'off',
-            '@typescript-eslint/no-empty-object-type': 'off',
           },
         },
         // New ESLint 10 rules - turned off initially to ease migration
         {
           name: 'ESLint 10 new rules',
           rules: {
-            // Requires attaching caught errors as `cause` when re-throwing
-            'preserve-caught-error': 'off',
-            // Disallows assignments that are never used
-            'no-useless-assignment': 'off',
             // Disallows unused vars without explicit init (use @typescript-eslint/no-unused-vars instead)
             'no-unassigned-vars': 'off',
+            // Disallows assignments that are never used
+            'no-useless-assignment': 'off',
+            // Requires attaching caught errors as `cause` when re-throwing
+            'preserve-caught-error': 'off',
           },
         },
         // @TODO: Remove this once @typescript-eslint/no-shadow supports wrapped functions
@@ -155,10 +154,13 @@ export function createBaseConfig({
           },
         },
       ]),
+      files: [`**/*${EXTENSION_TS}`],
+      name: 'Base config',
     },
+    createPerfectionistConfig(),
     {
-      name: 'ESM JS files',
       files: ['**/*.mjs'],
+      name: 'ESM JS files',
       rules: {
         'import/extensions': [
           'error',

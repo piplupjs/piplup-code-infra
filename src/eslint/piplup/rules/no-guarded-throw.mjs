@@ -67,18 +67,6 @@ function containsProcessEnvNodeEnv(node) {
  * @type {import('eslint').Rule.RuleModule}
  */
 const rule = {
-  meta: {
-    type: 'problem',
-    docs: {
-      description:
-        'Disallow throw statements guarded by process.env.NODE_ENV checks, as they cause environment-dependent control flow',
-    },
-    messages: {
-      guardedThrow:
-        'Do not guard `throw` statements with `process.env.NODE_ENV` checks. Guarded throws execute only in certain environments, causing inconsistent control flow between development and production.',
-    },
-    schema: [],
-  },
   create(context) {
     return {
       ThrowStatement(node) {
@@ -100,7 +88,7 @@ const rule = {
             const isInAlternate = current.alternate === currentChild;
 
             if ((isInConsequent || isInAlternate) && containsProcessEnvNodeEnv(current.test)) {
-              context.report({ node, messageId: 'guardedThrow' });
+              context.report({ messageId: 'guardedThrow', node });
               return;
             }
           }
@@ -109,6 +97,18 @@ const rule = {
         }
       },
     };
+  },
+  meta: {
+    docs: {
+      description:
+        'Disallow throw statements guarded by process.env.NODE_ENV checks, as they cause environment-dependent control flow',
+    },
+    messages: {
+      guardedThrow:
+        'Do not guard `throw` statements with `process.env.NODE_ENV` checks. Guarded throws execute only in certain environments, causing inconsistent control flow between development and production.',
+    },
+    schema: [],
+    type: 'problem',
   },
 };
 

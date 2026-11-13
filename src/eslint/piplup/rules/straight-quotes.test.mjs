@@ -10,15 +10,6 @@ const ruleTester = new eslint.RuleTester({
 });
 
 ruleTester.run('straight-quotes', rule, {
-  valid: [
-    `
-const values = [
-  {
-    title: 'Put community first 💙',
-  },
-];
-  `,
-  ],
   invalid: [
     {
       code: `
@@ -31,8 +22,8 @@ const values = [
       `,
       errors: [
         {
-          messageId: 'wrongQuotes',
           line: 5,
+          messageId: 'wrongQuotes',
         },
       ],
     },
@@ -43,26 +34,35 @@ const values = 'foo';
       `,
       errors: [
         {
-          line: 2,
           column: 32,
+          line: 2,
           messageId: 'wrongQuotes',
         },
         {
-          line: 2,
           column: 36,
+          line: 2,
           messageId: 'wrongQuotes',
         },
         {
-          line: 2,
           column: 41,
+          line: 2,
           messageId: 'wrongQuotes',
         },
         {
-          line: 2,
           column: 46,
+          line: 2,
           messageId: 'wrongQuotes',
         },
       ],
     },
+  ],
+  valid: [
+    `
+const values = [
+  {
+    title: 'Put community first 💙',
+  },
+];
+  `,
   ],
 });

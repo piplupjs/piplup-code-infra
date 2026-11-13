@@ -9,10 +9,10 @@ export default defineConfig(
   {
     files: [`**/*${EXTENSION_TS}`],
     rules: {
-      'piplup/filename-case': 'error',
       'compat/compat': 'off',
       'jsx-a11y/control-has-associated-label': 'off',
       'jsx-a11y/no-autofocus': 'off',
+      'piplup/filename-case': 'error',
       'react/prop-types': 'off',
     },
     settings: {
@@ -24,8 +24,8 @@ export default defineConfig(
     },
   },
   {
-    files: [`**/*${EXTENSION_TEST_FILE}`],
     extends: createTestConfig(),
+    files: [`**/*${EXTENSION_TEST_FILE}`],
   },
   {
     files: ['scripts/**'],

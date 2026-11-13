@@ -13,75 +13,9 @@ const ruleTester = new eslint.RuleTester({
 });
 
 ruleTester.run('disallow-react-api-in-server-components', rule, {
-  valid: [
-    // Files with 'use client' directive are allowed to use React APIs
-    {
-      name: 'React.useState with use client directive',
-      code: `'use client';
-React.useState();`,
-    },
-    {
-      name: 'React.useEffect with use client directive',
-      code: `'use client';
-React.useEffect(() => {});`,
-    },
-    {
-      name: 'React.useContext with use client directive',
-      code: `'use client';
-React.useContext(MyContext);`,
-    },
-    {
-      name: 'React.useRef with use client directive',
-      code: `'use client';
-React.useRef();`,
-    },
-    {
-      name: 'import useState with use client directive',
-      code: `'use client';
-import { useState } from 'react';`,
-    },
-    {
-      name: 'import useContext with use client directive',
-      code: `'use client';
-import { useContext } from 'react';`,
-    },
-    {
-      name: 'import useRef with use client directive',
-      code: `'use client';
-import { useRef } from 'react';`,
-    },
-    {
-      name: 'import useIsoLayoutEffect with use client directive',
-      code: `'use client';
-import { useIsoLayoutEffect } from '@piplup/utils';`,
-    },
-    {
-      name: 'useIsoLayoutEffect call with use client directive',
-      code: `'use client';
-useIsoLayoutEffect(() => {});`,
-    },
-    // APIs not in the forbidden list are allowed
-    {
-      name: 'React.memo is allowed',
-      code: `React.memo(() => {});`,
-    },
-    {
-      name: 'React.forwardRef is allowed',
-      code: `React.forwardRef(() => {});`,
-    },
-    {
-      name: 'import useMemo is allowed',
-      code: `import { useMemo } from 'react';`,
-    },
-    {
-      name: 'custom hook is allowed',
-      code: `import { useCustomHook } from './hooks';`,
-    },
-  ],
   invalid: [
     // React.* API calls without 'use client' directive
     {
-      name: 'inserts use client after leading comments',
       code: `/* license header */
 React.useState();`,
       errors: [
@@ -90,12 +24,12 @@ React.useState();`,
             "Using 'React.useState' is forbidden if the file doesn't have a 'use client' directive.",
         },
       ],
+      name: 'inserts use client after leading comments',
       output: `/* license header */
 'use client';
 React.useState();`,
     },
     {
-      name: 'React.useState without use client directive',
       code: `React.useState();`,
       errors: [
         {
@@ -103,11 +37,11 @@ React.useState();`,
             "Using 'React.useState' is forbidden if the file doesn't have a 'use client' directive.",
         },
       ],
+      name: 'React.useState without use client directive',
       output: `'use client';
 React.useState();`,
     },
     {
-      name: 'React.useEffect without use client directive',
       code: `React.useEffect(() => {});`,
       errors: [
         {
@@ -115,11 +49,11 @@ React.useState();`,
             "Using 'React.useEffect' is forbidden if the file doesn't have a 'use client' directive.",
         },
       ],
+      name: 'React.useEffect without use client directive',
       output: `'use client';
 React.useEffect(() => {});`,
     },
     {
-      name: 'React.useContext without use client directive',
       code: `React.useContext(MyContext);`,
       errors: [
         {
@@ -127,11 +61,11 @@ React.useEffect(() => {});`,
             "Using 'React.useContext' is forbidden if the file doesn't have a 'use client' directive.",
         },
       ],
+      name: 'React.useContext without use client directive',
       output: `'use client';
 React.useContext(MyContext);`,
     },
     {
-      name: 'React.useRef without use client directive',
       code: `React.useRef();`,
       errors: [
         {
@@ -139,11 +73,11 @@ React.useContext(MyContext);`,
             "Using 'React.useRef' is forbidden if the file doesn't have a 'use client' directive.",
         },
       ],
+      name: 'React.useRef without use client directive',
       output: `'use client';
 React.useRef();`,
     },
     {
-      name: 'React.useLayoutEffect without use client directive',
       code: `React.useLayoutEffect(() => {});`,
       errors: [
         {
@@ -151,11 +85,11 @@ React.useRef();`,
             "Using 'React.useLayoutEffect' is forbidden if the file doesn't have a 'use client' directive.",
         },
       ],
+      name: 'React.useLayoutEffect without use client directive',
       output: `'use client';
 React.useLayoutEffect(() => {});`,
     },
     {
-      name: 'React.useReducer without use client directive',
       code: `React.useReducer(reducer, initialState);`,
       errors: [
         {
@@ -163,11 +97,11 @@ React.useLayoutEffect(() => {});`,
             "Using 'React.useReducer' is forbidden if the file doesn't have a 'use client' directive.",
         },
       ],
+      name: 'React.useReducer without use client directive',
       output: `'use client';
 React.useReducer(reducer, initialState);`,
     },
     {
-      name: 'React.useTransition without use client directive',
       code: `React.useTransition();`,
       errors: [
         {
@@ -175,11 +109,11 @@ React.useReducer(reducer, initialState);`,
             "Using 'React.useTransition' is forbidden if the file doesn't have a 'use client' directive.",
         },
       ],
+      name: 'React.useTransition without use client directive',
       output: `'use client';
 React.useTransition();`,
     },
     {
-      name: 'React.createContext without use client directive',
       code: `React.createContext();`,
       errors: [
         {
@@ -187,12 +121,12 @@ React.useTransition();`,
             "Using 'React.createContext' is forbidden if the file doesn't have a 'use client' directive.",
         },
       ],
+      name: 'React.createContext without use client directive',
       output: `'use client';
 React.createContext();`,
     },
     // Named imports from 'react' without 'use client' directive
     {
-      name: 'import useState without use client directive',
       code: `import { useState } from 'react';`,
       errors: [
         {
@@ -200,11 +134,11 @@ React.createContext();`,
             "Using 'useState' is forbidden if the file doesn't have a 'use client' directive.",
         },
       ],
+      name: 'import useState without use client directive',
       output: `'use client';
 import { useState } from 'react';`,
     },
     {
-      name: 'import useContext without use client directive',
       code: `import { useContext } from 'react';`,
       errors: [
         {
@@ -212,22 +146,22 @@ import { useState } from 'react';`,
             "Using 'useContext' is forbidden if the file doesn't have a 'use client' directive.",
         },
       ],
+      name: 'import useContext without use client directive',
       output: `'use client';
 import { useContext } from 'react';`,
     },
     {
-      name: 'import useRef without use client directive',
       code: `import { useRef } from 'react';`,
       errors: [
         {
           message: "Using 'useRef' is forbidden if the file doesn't have a 'use client' directive.",
         },
       ],
+      name: 'import useRef without use client directive',
       output: `'use client';
 import { useRef } from 'react';`,
     },
     {
-      name: 'import multiple React APIs without use client directive',
       code: `import { useState, useEffect } from 'react';`,
       errors: [
         {
@@ -239,12 +173,12 @@ import { useRef } from 'react';`,
             "Using 'useEffect' is forbidden if the file doesn't have a 'use client' directive.",
         },
       ],
+      name: 'import multiple React APIs without use client directive',
       output: `'use client';
 import { useState, useEffect } from 'react';`,
     },
     // Forbidden APIs (useIsoLayoutEffect)
     {
-      name: 'import useIsoLayoutEffect without use client directive',
       code: `import { useIsoLayoutEffect } from '@piplup/utils';`,
       errors: [
         {
@@ -252,11 +186,11 @@ import { useState, useEffect } from 'react';`,
             "Using 'useIsoLayoutEffect' is forbidden if the file doesn't have a 'use client' directive.",
         },
       ],
+      name: 'import useIsoLayoutEffect without use client directive',
       output: `'use client';
 import { useIsoLayoutEffect } from '@piplup/utils';`,
     },
     {
-      name: 'import useIsoLayoutEffect as default without use client directive',
       code: `import useIsoLayoutEffect from '@piplup/utils/useIsoLayoutEffect';`,
       errors: [
         {
@@ -264,11 +198,11 @@ import { useIsoLayoutEffect } from '@piplup/utils';`,
             "Using 'useIsoLayoutEffect' is forbidden if the file doesn't have a 'use client' directive.",
         },
       ],
+      name: 'import useIsoLayoutEffect as default without use client directive',
       output: `'use client';
 import useIsoLayoutEffect from '@piplup/utils/useIsoLayoutEffect';`,
     },
     {
-      name: 'useIsoLayoutEffect call without use client directive',
       code: `useIsoLayoutEffect(() => {});`,
       errors: [
         {
@@ -276,12 +210,12 @@ import useIsoLayoutEffect from '@piplup/utils/useIsoLayoutEffect';`,
             "Using 'useIsoLayoutEffect' is forbidden if the file doesn't have a 'use client' directive.",
         },
       ],
+      name: 'useIsoLayoutEffect call without use client directive',
       output: `'use client';
 useIsoLayoutEffect(() => {});`,
     },
     // No autofix for 'use server' files
     {
-      name: 'React.useState in use server file (no autofix)',
       code: `'use server';
 React.useState();`,
       errors: [
@@ -290,10 +224,10 @@ React.useState();`,
             "Using 'React.useState' is forbidden if the file doesn't have a 'use client' directive.",
         },
       ],
+      name: 'React.useState in use server file (no autofix)',
       output: null,
     },
     {
-      name: 'import useState in use server file (no autofix)',
       code: `'use server';
 import { useState } from 'react';`,
       errors: [
@@ -302,10 +236,10 @@ import { useState } from 'react';`,
             "Using 'useState' is forbidden if the file doesn't have a 'use client' directive.",
         },
       ],
+      name: 'import useState in use server file (no autofix)',
       output: null,
     },
     {
-      name: 'import useIsoLayoutEffect in use server file (no autofix)',
       code: `'use server';
 import { useIsoLayoutEffect } from '@piplup/utils';`,
       errors: [
@@ -314,7 +248,73 @@ import { useIsoLayoutEffect } from '@piplup/utils';`,
             "Using 'useIsoLayoutEffect' is forbidden if the file doesn't have a 'use client' directive.",
         },
       ],
+      name: 'import useIsoLayoutEffect in use server file (no autofix)',
       output: null,
+    },
+  ],
+  valid: [
+    // Files with 'use client' directive are allowed to use React APIs
+    {
+      code: `'use client';
+React.useState();`,
+      name: 'React.useState with use client directive',
+    },
+    {
+      code: `'use client';
+React.useEffect(() => {});`,
+      name: 'React.useEffect with use client directive',
+    },
+    {
+      code: `'use client';
+React.useContext(MyContext);`,
+      name: 'React.useContext with use client directive',
+    },
+    {
+      code: `'use client';
+React.useRef();`,
+      name: 'React.useRef with use client directive',
+    },
+    {
+      code: `'use client';
+import { useState } from 'react';`,
+      name: 'import useState with use client directive',
+    },
+    {
+      code: `'use client';
+import { useContext } from 'react';`,
+      name: 'import useContext with use client directive',
+    },
+    {
+      code: `'use client';
+import { useRef } from 'react';`,
+      name: 'import useRef with use client directive',
+    },
+    {
+      code: `'use client';
+import { useIsoLayoutEffect } from '@piplup/utils';`,
+      name: 'import useIsoLayoutEffect with use client directive',
+    },
+    {
+      code: `'use client';
+useIsoLayoutEffect(() => {});`,
+      name: 'useIsoLayoutEffect call with use client directive',
+    },
+    // APIs not in the forbidden list are allowed
+    {
+      code: `React.memo(() => {});`,
+      name: 'React.memo is allowed',
+    },
+    {
+      code: `React.forwardRef(() => {});`,
+      name: 'React.forwardRef is allowed',
+    },
+    {
+      code: `import { useMemo } from 'react';`,
+      name: 'import useMemo is allowed',
+    },
+    {
+      code: `import { useCustomHook } from './hooks';`,
+      name: 'custom hook is allowed',
     },
   ],
 });

@@ -53,10 +53,10 @@ describe('routeRule', () => {
   });
 
   it('loads the ESLint plugin for rules oxlint lacks', () => {
-    expect(routeRule('import/order')).toEqual({ key: 'import-js/order', jsPlugin: 'import-js' });
+    expect(routeRule('import/order')).toEqual({ jsPlugin: 'import-js', key: 'import-js/order' });
     expect(routeRule('piplup/no-guarded-throw')).toEqual({
-      key: 'piplup/no-guarded-throw',
       jsPlugin: 'piplup',
+      key: 'piplup/no-guarded-throw',
     });
     expect(routeRule('dot-notation')).toMatchObject({ jsPlugin: 'eslint-js' });
   });
@@ -76,7 +76,7 @@ describe('createOxlintConfig', () => {
   });
 
   afterAll(async () => {
-    await fs.rm(emptyDir, { recursive: true, force: true });
+    await fs.rm(emptyDir, { force: true, recursive: true });
   });
 
   // Building the config fails on any enabled ESLint rule oxlint can't run, so this covers every
@@ -118,11 +118,11 @@ describe('parity with ESLint', () => {
 
     const eslint = new ESLint({
       cwd: fixtureDir,
-      overrideConfigFile: true,
       overrideConfig: defineConfig(
         createBaseConfig({ baseDirectory: fixtureDir, markdown: false }),
-        { files: [`**/*${EXTENSION_TEST_FILE}`], extends: createTestConfig() },
+        { extends: createTestConfig(), files: [`**/*${EXTENSION_TEST_FILE}`] },
       ),
+      overrideConfigFile: true,
     });
     const eslintFindings = new Set();
     for (const result of await eslint.lintFiles(files)) {
@@ -170,14 +170,14 @@ describe('parity with ESLint', () => {
 
     expect(eslintFindings.size).toBeGreaterThan(25);
     expect({
-      onlyOxlint: [...oxlintFindings].filter((item) => !eslintFindings.has(item)),
       onlyEslint: [...eslintFindings].filter((item) => !oxlintFindings.has(item)),
+      onlyOxlint: [...oxlintFindings].filter((item) => !eslintFindings.has(item)),
     }).toEqual({
+      onlyEslint: [],
       // The comment names `@typescript-eslint/naming-convention`, which oxlint runs as
       // `typescript-js/naming-convention`. The rule honors the comment, but oxlint, which matches
       // comments against its own rule names, still counts it as unused.
       onlyOxlint: ['src/directives.ts:7 unused-directive'],
-      onlyEslint: [],
     });
   }, 120_000);
 });

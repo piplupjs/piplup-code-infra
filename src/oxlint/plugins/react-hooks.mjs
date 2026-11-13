@@ -1,4 +1,4 @@
-import plugin from '../../plugins/react-hooks.mjs';
+import plugin from '../../lint/plugins/react-hooks.mjs';
 
 import { withEslintDirectives } from './with-eslint-directives.mjs';
 

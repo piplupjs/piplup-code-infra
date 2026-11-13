@@ -11,7 +11,7 @@ export default fixedPlugin;
 
 /** @type {Record<string, import('eslint').Linter.Config[]>} */
 export const configs = {
-  recommended: fixupConfigs(importPlugin.flatConfigs.recommended),
   react: fixupConfigs(importPlugin.flatConfigs.react),
+  recommended: fixupConfigs(importPlugin.flatConfigs.recommended),
   typescript: fixupConfigs(importPlugin.flatConfigs.typescript),
 };

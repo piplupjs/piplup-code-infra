@@ -19,7 +19,7 @@ import { createBaseConfig, createNodeSupportConfig } from './index.mjs';
  * @param {'node-support' | 'base'} [options.config]
  */
 async function lintInPackage(packageJson, relativePath, code, options = {}) {
-  const { packageDir = 'packages/my-package', config = 'node-support' } = options;
+  const { config = 'node-support', packageDir = 'packages/my-package' } = options;
   const cwd = await makeTempDir();
   await writePackage(cwd, packageDir, { name: 'my-package', ...packageJson });
   // Read by eslint-plugin-compat in the base config.
@@ -30,11 +30,11 @@ async function lintInPackage(packageJson, relativePath, code, options = {}) {
 
   const eslint = new ESLint({
     cwd,
-    overrideConfigFile: true,
     overrideConfig:
       config === 'base'
         ? createBaseConfig({ baseDirectory: cwd, markdown: false })
         : createNodeSupportConfig(cwd),
+    overrideConfigFile: true,
   });
   const [result] = await eslint.lintFiles([filePath]);
   return result.messages
@@ -134,8 +134,8 @@ describe('createNodeSupportConfig', () => {
 
     const eslint = new ESLint({
       cwd,
-      overrideConfigFile: true,
       overrideConfig: createNodeSupportConfig(baseDirectory),
+      overrideConfigFile: true,
     });
     const [result] = await eslint.lintFiles([filePath]);
     expect(result.messages.map((message) => message.ruleId)).toContain(

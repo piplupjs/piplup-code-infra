@@ -18,19 +18,19 @@ const piplupPlugin = {
     version: '2.0.0',
   },
   rules: {
+    // Some discrepancies between TypeScript and ESLint types - casting to any
+    'add-undef-to-optional': /** @type {any} */ (addUndefToOptional),
     'consistent-production-guard': consistentProductionGuard,
     'disallow-active-element-as-key-event-target': disallowActiveElementAsKeyEventTarget,
     'disallow-react-api-in-server-components': disallowReactApiInServerComponents,
     'docgen-ignore-before-comment': docgenIgnoreBeforeComment,
     'filename-case': filenameCase,
+    'flatten-parentheses': /** @type {any} */ (flattenParentheses),
     'no-guarded-throw': noGuardedThrow,
     'no-presentation-role': noPresentationRole,
     'no-restricted-resolved-imports': noRestrictedResolvedImports,
     'require-dev-wrapper': requireDevWrapper,
     'straight-quotes': straightQuotes,
-    // Some discrepancies between TypeScript and ESLint types - casting to any
-    'add-undef-to-optional': /** @type {any} */ (addUndefToOptional),
-    'flatten-parentheses': /** @type {any} */ (flattenParentheses),
   },
 };
 

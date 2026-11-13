@@ -31,12 +31,12 @@ for (const names of Object.values(byScope)) {
 }
 
 const output = {
-  version,
   rules: Object.fromEntries(Object.entries(byScope).sort(([a], [b]) => a.localeCompare(b))),
   typeAware: rules
     .filter((rule) => rule.type_aware)
     .map((rule) => `${rule.scope}/${rule.value}`)
     .sort(),
+  version,
 };
 
 const outputPath = new URL('../src/oxlint/builtin-rules.json', import.meta.url);

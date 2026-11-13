@@ -31,8 +31,8 @@ const remarkLintPiplupGitDiff = lintRule(
         file.message(
           'Line in a `diff` code block must start with " ", "+", "-", "@@ ", "diff --git ", or "index ".',
           {
-            start: { line: lineNumber, column: 1 },
-            end: { line: lineNumber, column: line.length + 1 },
+            end: { column: line.length + 1, line: lineNumber },
+            start: { column: 1, line: lineNumber },
           },
         );
       });

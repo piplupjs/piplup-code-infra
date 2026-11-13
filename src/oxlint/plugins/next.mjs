@@ -1,4 +1,4 @@
-import plugin from '../../plugins/next.mjs';
+import plugin from '../../lint/plugins/next.mjs';
 
 import { withEslintDirectives } from './with-eslint-directives.mjs';
 
