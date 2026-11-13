@@ -5,7 +5,6 @@ import disallowReactApiInServerComponents from './rules/disallow-react-api-in-se
 import docgenIgnoreBeforeComment from './rules/docgen-ignore-before-comment.mjs';
 import filenameCase from './rules/filename-case.mjs';
 import flattenParentheses from './rules/flatten-parentheses.mjs';
-import noFloatingCleanup from './rules/no-floating-cleanup.mjs';
 import noGuardedThrow from './rules/no-guarded-throw.mjs';
 import noPresentationRole from './rules/no-presentation-role.mjs';
 import noRestrictedResolvedImports from './rules/no-restricted-resolved-imports.mjs';
@@ -32,7 +31,6 @@ const piplupPlugin = {
     // Some discrepancies between TypeScript and ESLint types - casting to any
     'add-undef-to-optional': /** @type {any} */ (addUndefToOptional),
     'flatten-parentheses': /** @type {any} */ (flattenParentheses),
-    'no-floating-cleanup': /** @type {any} */ (noFloatingCleanup),
   },
 };
 
