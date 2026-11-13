@@ -25,7 +25,7 @@ pnpm add -D @piplup/code-infra
 | `@piplup/code-infra/prettier`    | `createBaseConfig`, `docsOverrides`                                                                       |
 | `@piplup/code-infra/stylelint`   | Stylelint config, including CSS-in-JS                                                                     |
 | `@piplup/code-infra/remark`      | `createRemarkConfig` for `.remarkrc.mjs`; also used by the ESLint Markdown rules                          |
-| `@piplup/code-infra/oxlint`      | `createOxlintConfig`: the ESLint rules above, run by oxlint                                               |
+| `@piplup/code-infra/oxlint`      | `createOxlintConfig`: an ESLint config's rules, run by oxlint                                             |
 | `@piplup/code-infra/oxfmt`       | `createOxfmtConfig`, `docsOverrides`: the Prettier config above, for oxfmt                                |
 
 `eslint.config.mjs`:
@@ -78,10 +78,16 @@ oxlint and oxfmt can replace ESLint and Prettier for JavaScript and TypeScript. 
 ```ts
 import { createOxlintConfig } from '@piplup/code-infra/oxlint';
 
-export default await createOxlintConfig({ baseDirectory: import.meta.dirname });
+import eslintConfig from './eslint.config.mjs';
+
+export default await createOxlintConfig(eslintConfig, { baseDirectory: import.meta.dirname });
 ```
 
-`createOxlintConfig` reads the rules from the ESLint config, so it needs `eslint` installed. It takes `enableReactCompiler` (adds `configs.reactCompiler`), `consistentTypeImports` (`false` allows inline `type` imports) and `docs` (`true`, or `{ rootDir }`) for the `configs.docs` rules. It enables the test file rules for `**/*.test.*` files. oxlint runs a rule natively when it implements it. Otherwise it loads the rule's ESLint plugin, because oxlint has no native version of it.
+`createOxlintConfig` takes an ESLint config, anything `defineConfig` takes, and builds an oxlint config with the same rules, options and globals for each file. So your own changes to the ESLint config carry over, and it needs `eslint` installed. oxlint runs a rule natively when it implements it. Otherwise it loads the rule's ESLint plugin.
+
+- Each ESLint config object for some of the files becomes an oxlint override, from its `files` and `ignores`. The global `ignores` become `ignorePatterns`.
+- It asks ESLint about the repository's files, and about made-up files for each override. A file the overrides can't describe gets an override that lists it, for example when a config's `files` is a function. Files added later aren't in that list, so build the config again.
+- Rules from a plugin it has no route for make it throw. Turn those rules off for oxlint, or keep linting those files with ESLint.
 
 `.oxfmtrc.json` can't import a config, so use `oxfmt.config.ts`:
 

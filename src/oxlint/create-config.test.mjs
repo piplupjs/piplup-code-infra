@@ -7,17 +7,89 @@ import { fileURLToPath } from 'node:url';
 
 import { ESLint } from 'eslint';
 import { defineConfig } from 'eslint/config';
+import { minimatch } from 'minimatch';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
-import { configs } from '../eslint/configs/index.mjs';
+import { configs as docsConfigs } from '../eslint/docs.mjs';
 import { EXTENSION_TEST_FILE } from '../eslint/extensions.mjs';
+import { configs, nodeSupport } from '../eslint/index.mjs';
 
-import { createOxlintConfig, routeRule } from './create-config.mjs';
+import { createOxlintConfig, DROP_OPTIONS, expandGlob, routeRule } from './create-config.mjs';
+
+/** @typedef {Parameters<typeof defineConfig>[number]} ConfigWithExtends */
 
 const require = createRequire(import.meta.url);
 const oxlintPackageJsonPath = require.resolve('oxlint/package.json');
 const oxlintBin = path.join(path.dirname(oxlintPackageJsonPath), 'bin', 'oxlint');
 const fixtureDir = fileURLToPath(new URL('./__fixtures__/parity', import.meta.url));
+
+/** @type {ConfigWithExtends} */
+const testFiles = { extends: [configs.test], files: [`**/*${EXTENSION_TEST_FILE}`] };
+
+/** @type {ConfigWithExtends} */
+const docsFiles = {
+  extends: [docsConfigs.docs],
+  files: ['docs/**/*.{js,mjs,cjs,jsx,ts,tsx,mts,cts}'],
+  settings: { next: { rootDir: 'docs' } },
+};
+
+/**
+ * The rules oxlint enables for a file, from the top-level rules and the overrides that match it.
+ * @param {Awaited<ReturnType<typeof createOxlintConfig>>} config
+ * @param {string} file
+ */
+function oxlintRules(config, file) {
+  const rules = { ...config.rules };
+  for (const override of config.overrides) {
+    const matches =
+      override.files.some((glob) => minimatch(file, glob, { dot: true })) &&
+      !override.excludeFiles?.some((glob) => minimatch(file, glob, { dot: true }));
+    if (matches) {
+      Object.assign(rules, override.rules);
+    }
+  }
+  return normalizeRules(rules);
+}
+
+/**
+ * The enabled rules, sorted, with severities as names.
+ * @param {Record<string, unknown>} rules
+ */
+function normalizeRules(rules) {
+  const names = ['off', 'warn', 'error'];
+  /** @param {unknown} severity */
+  const name = (severity) => (typeof severity === 'number' ? names[severity] : severity);
+  return Object.fromEntries(
+    Object.entries(rules)
+      .map(([rule, entry]) => [
+        rule,
+        Array.isArray(entry) ? [name(entry[0]), ...entry.slice(1)] : name(entry),
+      ])
+      .filter(([, entry]) => (Array.isArray(entry) ? entry[0] : entry) !== 'off')
+      .sort(([a], [b]) => String(a).localeCompare(String(b))),
+  );
+}
+
+/**
+ * The rules ESLint enables for a file, under their oxlint names.
+ * @param {ESLint} eslint
+ * @param {string} file
+ */
+async function eslintRules(eslint, file) {
+  const config = await eslint.calculateConfigForFile(file);
+  return normalizeRules(
+    Object.fromEntries(
+      Object.entries(config.rules)
+        // Turned-off rules may have no oxlint equivalent, and may share one with an enabled rule.
+        .filter(([, entry]) => (Array.isArray(entry) ? entry[0] : entry) !== 0)
+        .map(([rule, entry]) => {
+          const { key } = routeRule(rule);
+          // The builder drops options oxlint rejects that only repeat the defaults.
+          return [key, DROP_OPTIONS.has(key) && Array.isArray(entry) ? entry[0] : entry];
+        }),
+    ),
+  );
+}
 
 /**
  * @param {string} file
@@ -65,6 +137,21 @@ describe('routeRule', () => {
   });
 });
 
+describe('expandGlob', () => {
+  it('expands braces, extglob alternatives and character classes', () => {
+    expect(expandGlob('**/*.?(c|m)[jt]s')).toEqual([
+      '**/*.js',
+      '**/*.ts',
+      '**/*.cjs',
+      '**/*.cts',
+      '**/*.mjs',
+      '**/*.mts',
+    ]);
+    expect(expandGlob('docs/**/*.{md,mdx}')).toEqual(['docs/**/*.md', 'docs/**/*.mdx']);
+    expect(expandGlob('src/**')).toEqual(['src/**']);
+  });
+});
+
 describe('createOxlintConfig', () => {
   /** @type {string} */
   let emptyDir;
@@ -78,25 +165,117 @@ describe('createOxlintConfig', () => {
     await fs.rm(emptyDir, { force: true, recursive: true });
   });
 
+  /** @type {Record<string, ConfigWithExtends[]>} */
+  const eslintConfigs = {
+    docs: [configs.recommended, testFiles, docsFiles],
+    'docs at the root': [
+      configs.recommended,
+      testFiles,
+      { ...docsFiles, files: ['**/*.{js,mjs,cjs,jsx,ts,tsx,mts,cts}'], settings: {} },
+    ],
+    'inline type imports': [
+      configs.recommended,
+      {
+        rules: {
+          '@typescript-eslint/consistent-type-imports': 'off',
+          'import/consistent-type-specifier-style': 'off',
+        },
+      },
+    ],
+    'React Compiler': [configs.recommended, configs.reactCompiler, testFiles],
+    recommended: [configs.recommended, testFiles],
+  };
+
   // Building the config fails on any enabled ESLint rule oxlint can't run, so this covers every
-  // rule of every option combination.
-  it.each([
-    {},
-    { enableReactCompiler: true },
-    { consistentTypeImports: false },
-    { docs: true },
-    { docs: { rootDir: '.' } },
-  ])('routes every ESLint rule for %j', { timeout: 60_000 }, async (options) => {
-    const config = await createOxlintConfig({ baseDirectory: emptyDir, ...options });
-    expect(Object.keys(config.rules).length).toBeGreaterThan(150);
-    for (const { specifier } of config.jsPlugins) {
-      // eslint-disable-next-line no-await-in-loop -- one at a time keeps failures readable
-      await expect(fs.access(specifier)).resolves.toBeUndefined();
+  // rule of these configs.
+  it.each(Object.keys(eslintConfigs))(
+    'routes every ESLint rule for %s',
+    { timeout: 60_000 },
+    async (name) => {
+      const config = await createOxlintConfig(eslintConfigs[name], { baseDirectory: emptyDir });
+      expect(Object.keys(config.rules).length).toBeGreaterThan(150);
+      for (const { specifier } of config.jsPlugins) {
+        // eslint-disable-next-line no-await-in-loop -- one at a time keeps failures readable
+        await expect(fs.access(specifier)).resolves.toBeUndefined();
+      }
+    },
+  );
+
+  it.each(Object.keys(eslintConfigs))(
+    'enables the rules ESLint does for each kind of file, for %s',
+    { timeout: 60_000 },
+    async (name) => {
+      const config = await createOxlintConfig(eslintConfigs[name], { baseDirectory: emptyDir });
+      const eslint = new ESLint({
+        cwd: emptyDir,
+        overrideConfig: defineConfig(eslintConfigs[name]),
+        overrideConfigFile: true,
+      });
+      for (const file of [
+        'a.js',
+        'src/a.mjs',
+        'src/a.cjs',
+        'src/a.jsx',
+        'src/a.ts',
+        'src/a.tsx',
+        'src/a.d.ts',
+        'src/a.test.ts',
+        'src/a.test.mjs',
+        'src/a.spec.ts',
+        'docs/a.tsx',
+        'docs/a.test.tsx',
+        'docs/next.config.mjs',
+        'docs/scripts/build.ts',
+      ]) {
+        // eslint-disable-next-line no-await-in-loop -- one at a time keeps failures readable
+        expect(oxlintRules(config, file), file).toEqual(await eslintRules(eslint, file));
+      }
+      // Patterns cover every kind of file, so none needs a list of files.
+      expect(config.overrides.every(({ files }) => files.every((glob) => glob.includes('*')))).toBe(
+        true,
+      );
+    },
+  );
+
+  it('lists the files whose ESLint config it can only match by name', async () => {
+    const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'oxlint-config-'));
+    try {
+      await fs.writeFile(path.join(dir, 'package.json'), '{ "name": "listed" }');
+      await fs.mkdir(path.join(dir, 'src'));
+      await fs.writeFile(path.join(dir, 'src/special.ts'), 'export {};\n');
+      await fs.writeFile(path.join(dir, 'src/plain.ts'), 'export {};\n');
+      const config = await createOxlintConfig(
+        [
+          configs.recommended,
+          {
+            // ESLint takes functions in `files`, but its types don't say so.
+            files: [
+              /** @type {any} */ ((/** @type {string} */ file) => file.endsWith('special.ts')),
+            ],
+            rules: { 'no-console': 'off' },
+          },
+        ],
+        { baseDirectory: dir },
+      );
+      expect(config.overrides.at(-1)).toEqual({
+        files: ['src/special.ts'],
+        rules: { 'no-console': 'off' },
+      });
+      expect(oxlintRules(config, 'src/plain.ts')).toHaveProperty('no-console');
+    } finally {
+      await fs.rm(dir, { force: true, recursive: true });
     }
-  });
+  }, 60_000);
+
+  it('takes the ignore patterns from the ESLint config', async () => {
+    const config = await createOxlintConfig([{ ignores: ['generated/**'] }, configs.recommended], {
+      baseDirectory: emptyDir,
+    });
+    expect(config.ignorePatterns).toEqual(['generated/**']);
+  }, 60_000);
 
   it('is accepted by oxlint', async () => {
-    const config = await createOxlintConfig({ baseDirectory: emptyDir, docs: true });
+    const config = await createOxlintConfig(eslintConfigs.docs, { baseDirectory: emptyDir });
     const configPath = path.join(emptyDir, '.oxlintrc.json');
     await fs.writeFile(configPath, JSON.stringify(config));
     await fs.writeFile(path.join(emptyDir, 'a.ts'), 'export const a = 1;\n');
@@ -115,12 +294,10 @@ describe('parity with ESLint', () => {
       path.posix.join('src', file),
     );
 
+    const eslintConfig = defineConfig(configs.recommended, nodeSupport(fixtureDir), testFiles);
     const eslint = new ESLint({
       cwd: fixtureDir,
-      overrideConfig: defineConfig(configs.recommended, {
-        extends: [configs.test],
-        files: [`**/*${EXTENSION_TEST_FILE}`],
-      }),
+      overrideConfig: eslintConfig,
       overrideConfigFile: true,
     });
     const eslintFindings = new Set();
@@ -131,7 +308,7 @@ describe('parity with ESLint', () => {
       }
     }
 
-    const config = await createOxlintConfig({ baseDirectory: fixtureDir });
+    const config = await createOxlintConfig(eslintConfig, { baseDirectory: fixtureDir });
     const configPath = path.join(os.tmpdir(), `oxlint-parity-${process.pid}.json`);
     await fs.writeFile(configPath, JSON.stringify(config));
     /** @type {string} */

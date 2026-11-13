@@ -8,10 +8,6 @@ import { defineConfig } from 'eslint/config';
 import { globbySync } from 'globby';
 import { minimatch } from 'minimatch';
 
-import { configs } from '../eslint/configs/index.mjs';
-import { EXTENSION_TEST_FILE } from '../eslint/extensions.mjs';
-import { nodeSupport } from '../eslint/node-support.mjs';
-
 /**
  * @typedef {import('eslint').Linter.RuleEntry} RuleEntry
  * @typedef {Record<string, RuleEntry>} Rules
@@ -32,7 +28,6 @@ import { nodeSupport } from '../eslint/node-support.mjs';
  */
 
 const JS_EXTENSIONS = '{js,mjs,cjs,jsx,ts,tsx,mts,cts}';
-const TEST_FILES = `**/*.test.${JS_EXTENSIONS}`;
 const SAMPLE = '__oxlint_sample__';
 
 /** @type {{ version: string, rules: Record<string, string[]>, typeAware: string[] }} */
@@ -144,7 +139,7 @@ const PREFER_JS_PLUGIN = new Set([
 ]);
 
 /** oxlint rules that take no options where the ESLint rule's options are only its defaults. */
-const DROP_OPTIONS = new Set(['vitest/no-conditional-expect', 'vitest/no-focused-tests']);
+export const DROP_OPTIONS = new Set(['vitest/no-conditional-expect', 'vitest/no-focused-tests']);
 
 /**
  * @param {string} rule
@@ -259,128 +254,271 @@ function hasTypeAwareBackend(baseDirectory) {
   }
 }
 
+const CODE_EXTENSIONS = ['js', 'mjs', 'cjs', 'jsx', 'ts', 'tsx', 'mts', 'cts'];
+const MATCH_OPTIONS = { dot: true };
+
 /**
- * @param {string} baseDirectory
+ * @typedef {{ rules: Rules, globals: Globals }} Applied
+ * @typedef {{ files: string[], excludeFiles?: string[] }} Target
+ */
+
+/**
+ * @param {string} file
+ * @param {string} pattern
+ * @returns {boolean}
+ */
+function matchesGlob(file, pattern) {
+  return minimatch(file, pattern, MATCH_OPTIONS);
+}
+
+/**
+ * @param {string} file
+ * @param {Target} target
+ * @returns {boolean}
+ */
+function matchesTarget(file, target) {
+  return (
+    target.files.some((pattern) => matchesGlob(file, pattern)) &&
+    !target.excludeFiles?.some((pattern) => matchesGlob(file, pattern))
+  );
+}
+
+/**
+ * Expands `{a,b}`, `?(a|b)`, `@(a|b)` and `[ab]` into separate patterns, so oxlint gets plain
+ * globs whatever syntax its matcher supports.
+ * @param {string} pattern
  * @returns {string[]}
  */
-function readIgnoreFile(baseDirectory) {
-  const ignorePath = path.join(baseDirectory, '.lintignore');
-  if (!fs.existsSync(ignorePath)) {
-    return [];
+export function expandGlob(pattern) {
+  const match = /([?@])\(([^()]*)\)|\{([^{}]*)\}|\[([^\]!^-]+)\]/.exec(pattern);
+  if (!match) {
+    return [pattern];
   }
-  return fs
-    .readFileSync(ignorePath, 'utf8')
-    .split(/\r?\n/)
-    .map((line) => line.trim())
-    .filter((line) => line && !line.startsWith('#'));
+  /** @type {string[]} */
+  let alternatives;
+  if (match[2] !== undefined) {
+    alternatives = [...(match[1] === '?' ? [''] : []), ...match[2].split('|')];
+  } else if (match[3] === undefined) {
+    alternatives = [...match[4]];
+  } else {
+    alternatives = match[3].split(',');
+  }
+  const before = pattern.slice(0, match.index);
+  const after = pattern.slice(match.index + match[0].length);
+  return [
+    ...new Set(alternatives.flatMap((alternative) => expandGlob(before + alternative + after))),
+  ];
 }
 
 /**
- * @param {string} baseDirectory
- * @returns {string[]} The packages that declare `engines.node`, as the ESLint Node.js support
- * config finds them.
+ * Whether oxlint lints a file: JavaScript or TypeScript, and not a code block that
+ * eslint-plugin-mdx extracts from a Markdown file, like `README.md/0.js`.
+ * @param {string} file
+ * @returns {boolean}
  */
-function findNodePackageDirs(baseDirectory) {
-  return globbySync('packages*/*/package.json', { cwd: baseDirectory })
-    .filter((packageJsonPath) => {
-      const packageJson = JSON.parse(
-        fs.readFileSync(path.join(baseDirectory, packageJsonPath), 'utf8'),
-      );
-      return typeof packageJson.engines?.node === 'string';
-    })
-    .map((packageJsonPath) => path.posix.dirname(packageJsonPath));
+function isCodeFile(file) {
+  const segments = file.split('/');
+  const extension = /\.([^./]+)$/.exec(segments.at(-1) ?? '')?.[1];
+  return (
+    extension !== undefined &&
+    CODE_EXTENSIONS.includes(extension) &&
+    !segments.slice(0, -1).some((segment) => /\.mdx?$/.test(segment))
+  );
 }
 
 /**
- * Builds an oxlint config that runs the same rules, with the same options, as the ESLint config
- * from `@piplup/code-infra/eslint`: `configs.recommended` and `nodeSupport()`, `configs.test` for
- * test files, and `configs.docs` when `docs` is set.
+ * Whether a pattern can match a file oxlint lints. Patterns for JSON files or Markdown code blocks
+ * can't.
+ * @param {string} pattern
+ * @returns {boolean}
+ */
+function isCodePattern(pattern) {
+  const segments = pattern.split('/');
+  const extension = /\.([\w-]+)$/.exec(segments.at(-1) ?? '')?.[1];
+  return (
+    (extension === undefined || CODE_EXTENSIONS.includes(extension)) &&
+    !segments.slice(0, -1).some((segment) => /\.mdx?$/.test(segment))
+  );
+}
+
+/**
+ * Whether a pattern matches every JavaScript and TypeScript file, like the `files` of the code
+ * configs. ESLint combines it with a narrower pattern when a config extends one of them.
+ * @param {string} pattern
+ * @returns {boolean}
+ */
+function matchesAllCode(pattern) {
+  return CODE_EXTENSIONS.every(
+    (extension) =>
+      matchesGlob(`sample.${extension}`, pattern) &&
+      matchesGlob(`a/b/sample.${extension}`, pattern),
+  );
+}
+
+/**
+ * The files an ESLint config object applies to, as oxlint `files` and `excludeFiles`.
+ * @param {import('eslint').Linter.Config} config
+ * @returns {Required<Target> | 'all' | 'none' | 'unsupported'} `all` for every JavaScript and
+ * TypeScript file, `none` for none of them, and `unsupported` for what oxlint can't express, such
+ * as a function, or an intersection of two narrow patterns.
+ */
+function toTarget(config) {
+  const excludeFiles = (config.ignores ?? [])
+    .filter((pattern) => typeof pattern === 'string' && !pattern.startsWith('!'))
+    .flatMap((pattern) => expandGlob(/** @type {string} */ (pattern)));
+  /** @type {Required<Target> | 'all'} */
+  const all = excludeFiles.length > 0 ? { excludeFiles, files: ['**/*'] } : 'all';
+  if (!config.files) {
+    return all;
+  }
+  /** @type {string[]} */
+  const patterns = [];
+  for (const entry of /** @type {unknown[]} */ (config.files)) {
+    // An array matches the files that all of its patterns match.
+    const parts = (Array.isArray(entry) ? entry : [entry]).filter(
+      (part) => typeof part !== 'string' || !matchesAllCode(part),
+    );
+    if (parts.length === 0) {
+      return all;
+    }
+    if (parts.length > 1 || typeof parts[0] !== 'string') {
+      return 'unsupported';
+    }
+    patterns.push(...expandGlob(parts[0]).filter(isCodePattern));
+  }
+  return patterns.length > 0 ? { excludeFiles, files: [...new Set(patterns)] } : 'none';
+}
+
+/**
+ * Made-up files a pattern matches, one per code extension it allows, so ESLint can be asked about
+ * files the repository doesn't have yet.
+ * @param {string} pattern
+ * @returns {string[]}
+ */
+function samplesFor(pattern) {
+  const base = pattern
+    .replace(/^\.?\//, '')
+    .replaceAll('**', SAMPLE)
+    .replaceAll('*', 'sample')
+    .replaceAll('?', 's');
+  return CODE_EXTENSIONS.flatMap((extension) => [
+    base,
+    `${base}.${extension}`,
+    `${base}/sample.${extension}`,
+    base.replace(/\.sample$/, `.${extension}`),
+  ]).filter((file) => isCodeFile(file) && matchesGlob(file, pattern));
+}
+
+/**
+ * @param {string} pattern
+ * @returns {string} The leading directories without glob characters, e.g. `docs` for `docs/**`.
+ */
+function literalPrefix(pattern) {
+  const segments = pattern.split('/');
+  const index = segments.findIndex((segment) => /[*?{[(]/.test(segment));
+  return segments.slice(0, index < 0 ? -1 : index).join('/');
+}
+
+/**
+ * Builds an oxlint config that runs the same rules, with the same options, as an ESLint flat
+ * config, for example one built from `configs.recommended` of `@piplup/code-infra/eslint`.
  *
  * oxlint runs a rule natively when it implements it, and otherwise loads the original ESLint
  * plugin through `jsPlugins`. JSON, `package.json` and Markdown files aren't covered: oxlint
- * only lints JavaScript and TypeScript. `code-infra lint` runs both.
+ * only lints JavaScript and TypeScript.
  *
- * The rules are read from the ESLint config itself, so the two stay in sync.
+ * ESLint config objects for some of the files become oxlint `overrides`, from their `files` and
+ * `ignores`. Each distinct set of files is worked out once, by asking ESLint about files it
+ * matches: made-up ones, and the repository's own. Repository files whose rules the overrides
+ * don't reproduce, for example because a config's `files` is a function, get an override that
+ * lists them.
  *
+ * @param {Parameters<typeof defineConfig>[number]} eslintConfig - The ESLint config: what
+ * `defineConfig` takes, so it may nest arrays and use `extends`.
  * @param {Object} [options]
- * @param {string} [options.baseDirectory] - The repository root. Defaults to the current directory.
- * @param {boolean} [options.enableReactCompiler] - Add `configs.reactCompiler`.
- * @param {boolean} [options.consistentTypeImports] - Keep `import type` separate, as `configs.typescript`
- * does. Defaults to `true`.
- * @param {{ rootDir?: string } | boolean} [options.docs] - Lint a Next.js docs app like
- * `configs.docs`. `true` uses the `docs` directory. Needs `@next/eslint-plugin-next`.
+ * @param {string} [options.baseDirectory] - The repository root, which file patterns are relative
+ * to. Defaults to the current directory.
  * @returns {Promise<OxlintConfig>}
  */
-export async function createOxlintConfig({
-  baseDirectory = process.cwd(),
-  consistentTypeImports = true,
-  docs = false,
-  enableReactCompiler = false,
-} = {}) {
-  const docsRootDir = docs ? ((docs === true ? undefined : docs.rootDir) ?? 'docs') : undefined;
-  const docsFiles =
-    docsRootDir === undefined
-      ? undefined
-      : path.posix.join(docsRootDir.replaceAll('\\', '/'), `**/*.${JS_EXTENSIONS}`);
-
-  const eslintConfig = defineConfig(
-    configs.recommended,
-    nodeSupport(baseDirectory),
-    enableReactCompiler ? configs.reactCompiler : [],
-    consistentTypeImports
-      ? []
-      : {
-          rules: {
-            '@typescript-eslint/consistent-type-imports': 'off',
-            'import/consistent-type-specifier-style': 'off',
-          },
-        },
-    { extends: [configs.test], files: [`**/*${EXTENSION_TEST_FILE}`] },
-    docsFiles
-      ? {
-          extends: [(await import('../eslint/docs.mjs')).configs.docs],
-          files: [docsFiles],
-          settings: { next: { rootDir: docsRootDir } },
-        }
-      : [],
-  );
+export async function createOxlintConfig(eslintConfig, { baseDirectory = process.cwd() } = {}) {
+  const flatConfig = defineConfig(eslintConfig);
   const eslint = new ESLint({
     cwd: baseDirectory,
-    overrideConfig: eslintConfig,
+    overrideConfig: flatConfig,
     overrideConfigFile: true,
   });
 
-  // Each category is a set of files ESLint configures differently, with a sample file to ask
-  // ESLint about. oxlint applies overrides in order, like ESLint.
-  const nodePackageDirs = findNodePackageDirs(baseDirectory);
-  /** @type {{ files: string[] | null, excludeFiles?: string[], sample: string }[]} */
-  const categories = [
-    { files: null, sample: `${SAMPLE}/sample.js` },
-    { files: ['**/*.mjs'], sample: `${SAMPLE}/sample.mjs` },
-    { files: ['**/*.cjs'], sample: `${SAMPLE}/sample.cjs` },
-    { files: ['**/*.jsx'], sample: `${SAMPLE}/sample.jsx` },
-    { files: ['**/*.{ts,mts,cts}'], sample: `${SAMPLE}/sample.ts` },
-    { files: ['**/*.tsx'], sample: `${SAMPLE}/sample.tsx` },
-    { files: ['**/*.d.{ts,mts,cts}'], sample: `${SAMPLE}/sample.d.ts` },
-    ...nodePackageDirs.map((dir) => ({
-      excludeFiles: [TEST_FILES, `**/*.spec.${JS_EXTENSIONS}`],
-      files: [`${dir}/src/**/*.${JS_EXTENSIONS}`],
-      sample: `${dir}/src/${SAMPLE}.ts`,
-    })),
-    { files: [TEST_FILES], sample: `${SAMPLE}/sample.test.tsx` },
-    ...(docsRootDir === undefined || !docsFiles
-      ? []
-      : [
-          { files: [docsFiles], sample: path.posix.join(docsRootDir, `${SAMPLE}/sample.tsx`) },
-          {
-            files: [
-              path.posix.join(docsRootDir, `**/*.config.*`),
-              path.posix.join(docsRootDir, `**/scripts/**`),
-            ],
-            sample: path.posix.join(docsRootDir, `scripts/${SAMPLE}.ts`),
-          },
-        ]),
-  ];
+  // The files that config objects with rules or globals apply to, in order, with the rules and
+  // globals they set. A run of objects for the same files is one target. Objects for every file
+  // are targets too, since they can undo what an earlier, narrower object set.
+  /** @type {(Required<Target> & { rules: Set<string>, globals: Set<string> })[]} */
+  const targets = [];
+  /** @type {string[]} */
+  const ignorePatterns = [];
+  for (const config of flatConfig) {
+    const keys = Object.keys(config).filter((key) => key !== 'name');
+    if (keys.length === 1 && keys[0] === 'ignores') {
+      ignorePatterns.push(
+        ...(config.ignores ?? []).filter((pattern) => typeof pattern === 'string'),
+      );
+      continue;
+    }
+    if (!config.rules && !config.languageOptions?.globals) {
+      continue;
+    }
+    const found = toTarget(config);
+    if (found === 'none' || found === 'unsupported') {
+      continue;
+    }
+    const target = found === 'all' ? { excludeFiles: [], files: ['**/*'] } : found;
+    const rules = Object.keys(config.rules ?? {}).flatMap((rule) => {
+      try {
+        return [routeRule(rule).key];
+      } catch {
+        // Only a rule that's turned off can lack a route; building the config fails on others.
+        return [];
+      }
+    });
+    const globals = Object.keys(config.languageOptions?.globals ?? {});
+    const last = targets.at(-1);
+    if (
+      last &&
+      JSON.stringify([last.files, last.excludeFiles]) ===
+        JSON.stringify([target.files, target.excludeFiles])
+    ) {
+      rules.forEach((rule) => last.rules.add(rule));
+      globals.forEach((name) => last.globals.add(name));
+    } else {
+      targets.push({ ...target, globals: new Set(globals), rules: new Set(rules) });
+    }
+  }
+
+  // The files to ask ESLint about: made-up ones for each target, and the repository's own.
+  const samples = new Set(CODE_EXTENSIONS.map((extension) => `${SAMPLE}/sample.${extension}`));
+  for (const target of targets) {
+    for (const pattern of target.files.filter((glob) => glob !== '**/*')) {
+      const prefix = literalPrefix(pattern);
+      for (const samplePattern of [
+        pattern,
+        ...target.excludeFiles,
+        // Excluded files inside the target's directory, like `docs/scripts/*` for `docs/**`.
+        ...(prefix ? target.excludeFiles.map((exclude) => `${prefix}/${exclude}`) : []),
+      ]) {
+        for (const file of samplesFor(samplePattern)) {
+          samples.add(file);
+        }
+      }
+    }
+  }
+  const repositoryFiles = globbySync(`**/*.${JS_EXTENSIONS}`, {
+    cwd: baseDirectory,
+    dot: true,
+    gitignore: true,
+    ignore: ['**/node_modules/**', '**/.git/**'],
+  });
+  for (const file of repositoryFiles) {
+    samples.add(file);
+  }
 
   /** @type {Set<string>} */
   const plugins = new Set();
@@ -415,64 +553,246 @@ export async function createOxlintConfig({
     return out;
   }
 
-  /** @type {{ files: string[] | null, excludeFiles?: string[], rules: Rules, globals: Globals }[]} */
-  const resolved = [];
+  // What ESLint applies to each file, translated once per distinct ESLint config. ESLint returns
+  // the same object for files that the same config objects match.
+  /** @type {Map<object, Applied>} */
+  const translations = new Map();
+  /** @type {Map<string, Applied>} */
+  const expected = new Map();
   /** @type {Record<string, unknown>} */
-  let settings = {};
-  for (const category of categories) {
-    // eslint-disable-next-line no-await-in-loop -- one ESLint instance, cached config
-    const config = await eslint.calculateConfigForFile(category.sample);
+  const settings = {};
+  for (const file of samples) {
+    // eslint-disable-next-line no-await-in-loop -- one ESLint instance, cached configs
+    const config = (await eslint.isPathIgnored(file))
+      ? undefined
+      : // eslint-disable-next-line no-await-in-loop -- as above
+        await eslint.calculateConfigForFile(file);
     if (!config) {
-      throw new Error(
-        `@piplup/code-infra: ESLint ignores "${category.sample}", so its oxlint rules can't be worked out.`,
-      );
+      continue;
     }
-    if (category.files === null) {
-      settings = config.settings ?? {};
+    let translation = translations.get(config);
+    if (!translation) {
+      translation = {
+        globals: toOxlintGlobals(config.languageOptions?.globals),
+        rules: translateRules(config.rules ?? {}),
+      };
+      translations.set(config, translation);
+      // oxlint has no settings per file. Plugins read only their own key, so a key set for some
+      // files does no harm to the others. The made-up files come first, so a key set for all
+      // files wins.
+      for (const [key, value] of Object.entries(config.settings ?? {})) {
+        if (!(key in settings)) {
+          settings[key] = value;
+        }
+      }
     }
-    resolved.push({
-      excludeFiles: category.excludeFiles,
-      files: category.files,
-      globals: toOxlintGlobals(config.languageOptions?.globals),
-      rules: translateRules(config.rules ?? {}),
-    });
+    expected.set(file, translation);
+  }
+  // Files that the same targets match and ESLint configures the same way get the same oxlint
+  // config, so one file stands for each such group.
+  /** @type {Map<string, { file: string, matched: number[], files: string[] }>} */
+  const groups = new Map();
+  /** @type {Map<Applied, number>} */
+  const translationIds = new Map();
+  for (const [file, translation] of expected) {
+    const matched = targets.flatMap((target, index) =>
+      matchesTarget(file, target) ? [index] : [],
+    );
+    if (!translationIds.has(translation)) {
+      translationIds.set(translation, translationIds.size);
+    }
+    const key = `${matched.join(',')}|${translationIds.get(translation)}`;
+    const group = groups.get(key);
+    if (group) {
+      group.files.push(file);
+    } else {
+      groups.set(key, { file, files: [file], matched });
+    }
   }
 
-  const [root, ...rest] = resolved;
+  /** The top-level rules and globals, which apply to all files before the overrides. */
+  /** @type {Applied} */
+  let root = { globals: {}, rules: {} };
   /** @type {Override[]} */
   const overrides = [];
-  rest.forEach((category, index) => {
-    const sample = categories[index + 1].sample;
-    // What oxlint would apply to the sample without this override.
-    /** @type {Rules} */
+
+  /**
+   * @param {string} file
+   * @returns {Applied} The enabled rules and the globals oxlint applies to the file so far.
+   */
+  function applied(file) {
     const rules = { ...root.rules };
-    /** @type {Globals} */
     const globals = { ...root.globals };
     for (const override of overrides) {
-      const matches =
-        override.files.some((glob) => minimatch(sample, glob, { dot: true })) &&
-        !override.excludeFiles?.some((glob) => minimatch(sample, glob, { dot: true }));
-      if (matches) {
+      if (matchesTarget(file, override)) {
         Object.assign(rules, override.rules);
         Object.assign(globals, override.globals);
       }
     }
-    const ruleDiff = diff(
-      Object.fromEntries(Object.entries(rules).filter(([, entry]) => isEnabled(entry))),
-      category.rules,
-      /** @type {RuleEntry} */ ('off'),
-    );
-    const globalsDiff = diff(globals, category.globals, /** @type {Globals[string]} */ ('off'));
-    if (Object.keys(ruleDiff).length === 0 && Object.keys(globalsDiff).length === 0) {
+    return {
+      globals,
+      rules: Object.fromEntries(Object.entries(rules).filter(([, entry]) => isEnabled(entry))),
+    };
+  }
+
+  /**
+   * The values to set for a rule or global. Where the files need different values, the one most
+   * of them need.
+   * @template T
+   * @param {{ current: Record<string, T>, wanted: Record<string, T>, weight: number }[]} states
+   * @param {string} key
+   * @param {T} off
+   * @returns {{ value: T } | undefined} Nothing when the files already have what they need.
+   */
+  function agreedValue(states, key, off) {
+    /** @type {Map<string, { count: number, value: T }>} */
+    const votes = new Map();
+    let changed = false;
+    for (const { current, wanted, weight } of states) {
+      const value = key in wanted ? wanted[key] : off;
+      const vote = JSON.stringify(value);
+      changed ||= vote !== JSON.stringify(key in current ? current[key] : off);
+      votes.set(vote, { count: (votes.get(vote)?.count ?? 0) + weight, value });
+    }
+    if (!changed) {
+      return undefined;
+    }
+    return [...votes.values()].reduce((best, vote) => (vote.count > best.count ? vote : best));
+  }
+
+  /**
+   * What to set for files on top of what oxlint applies to them so far. Each rule and global is
+   * worked out from the files for which `isLast` says this is the last place it's set, as later
+   * config objects win in ESLint.
+   * @param {Set<string> | undefined} keys - The rules and globals to consider; all by default.
+   * @param {(group: { matched: number[] }, kind: 'rules' | 'globals', key: string) => boolean} isLast
+   * @param {{ file: string, files: string[], matched: number[] }[]} candidates
+   * @returns {Applied}
+   */
+  function changesFor(keys, isLast, candidates) {
+    const states = candidates.map((group) => ({
+      group,
+      now: applied(group.file),
+      want: /** @type {Applied} */ (expected.get(group.file)),
+      weight: group.files.length,
+    }));
+    /** @type {Applied} */
+    const changes = { globals: {}, rules: {} };
+    for (const kind of /** @type {const} */ (['rules', 'globals'])) {
+      const kindKeys =
+        keys ??
+        new Set(
+          states.flatMap(({ now, want }) => [
+            ...Object.keys(now[kind]),
+            ...Object.keys(want[kind]),
+          ]),
+        );
+      for (const key of kindKeys) {
+        const agreed = agreedValue(
+          states
+            .filter(({ group }) => isLast(group, kind, key))
+            .map(({ now, want, weight }) => ({ current: now[kind], wanted: want[kind], weight })),
+          key,
+          /** @type {any} */ ('off'),
+        );
+        if (agreed) {
+          changes[kind][key] = /** @type {any} */ (agreed.value);
+        }
+      }
+    }
+    return changes;
+  }
+
+  /**
+   * Adds an override for the target, if the files it's the last target for need one.
+   * @param {Target & { rules?: Set<string>, globals?: Set<string> }} target
+   * @param {Parameters<typeof changesFor>[1]} isLast
+   * @param {Parameters<typeof changesFor>[2]} candidates
+   */
+  function addOverride(target, isLast, candidates) {
+    const { globals, rules } = {
+      globals: changesFor(target.globals, isLast, candidates).globals,
+      rules: changesFor(target.rules, isLast, candidates).rules,
+    };
+    if (Object.keys(rules).length === 0 && Object.keys(globals).length === 0) {
       return;
     }
     overrides.push({
-      files: /** @type {string[]} */ (category.files),
-      ...(category.excludeFiles ? { excludeFiles: category.excludeFiles } : {}),
-      ...(Object.keys(ruleDiff).length > 0 ? { rules: ruleDiff } : {}),
-      ...(Object.keys(globalsDiff).length > 0 ? { globals: globalsDiff } : {}),
+      files: target.files,
+      ...(target.excludeFiles?.length ? { excludeFiles: target.excludeFiles } : {}),
+      ...(Object.keys(rules).length > 0 ? { rules } : {}),
+      ...(Object.keys(globals).length > 0 ? { globals } : {}),
     });
+  }
+
+  /**
+   * @param {{ matched: number[] }} group
+   * @param {'rules' | 'globals'} kind
+   * @param {string} key
+   * @returns {number} The last target that sets the rule or global for the group, or -1.
+   */
+  function lastTarget(group, kind, key) {
+    return group.matched.reduce(
+      (last, matched) => (targets[matched][kind].has(key) ? matched : last),
+      -1,
+    );
+  }
+
+  // The top-level rules: what the files need where the last config to set a rule applies to all
+  // files. Overrides then change what narrower configs set.
+  const allGroups = [...groups.values()];
+  const topLevel = changesFor(
+    undefined,
+    (group, kind, key) => {
+      const last = targets[lastTarget(group, kind, key)];
+      return !last || (last.files.join() === '**/*' && last.excludeFiles.length === 0);
+    },
+    allGroups,
+  );
+  root = {
+    globals: Object.fromEntries(
+      Object.entries(topLevel.globals).filter(([, value]) => value !== 'off'),
+    ),
+    rules: Object.fromEntries(
+      Object.entries(topLevel.rules).filter(([, entry]) => isEnabled(entry)),
+    ),
+  };
+
+  targets.forEach((target, index) => {
+    addOverride(
+      target,
+      (group, kind, key) => lastTarget(group, kind, key) === index,
+      allGroups.filter((group) => group.matched.includes(index)),
+    );
   });
+
+  // Repository files the overrides get wrong, for example because a config's `files` is a
+  // function, get an override that lists them, grouped by what they still need.
+  const repositoryFileSet = new Set(repositoryFiles);
+  /** @type {Map<string, { file: string, files: string[], matched: number[] }>} */
+  const leftovers = new Map();
+  for (const group of allGroups) {
+    const files = group.files.filter((file) => repositoryFileSet.has(file));
+    if (files.length > 0) {
+      const now = applied(group.file);
+      const want = /** @type {Applied} */ (expected.get(group.file));
+      const needs = JSON.stringify([
+        diff(now.rules, want.rules, /** @type {RuleEntry} */ ('off')),
+        diff(now.globals, want.globals, /** @type {Globals[string]} */ ('off')),
+      ]);
+      if (needs !== '[{},{}]') {
+        const leftover = leftovers.get(needs);
+        if (leftover) {
+          leftover.files.push(...files);
+        } else {
+          leftovers.set(needs, { file: group.file, files, matched: group.matched });
+        }
+      }
+    }
+  }
+  for (const leftover of leftovers.values()) {
+    addOverride({ files: leftover.files.sort() }, () => true, [leftover]);
+  }
 
   const reactVersion = findReactVersion(baseDirectory);
   /** @type {any} */
@@ -489,7 +809,7 @@ export async function createOxlintConfig({
     // Only the rules listed below run.
     categories: { correctness: 'off' },
     globals: root.globals,
-    ignorePatterns: readIgnoreFile(baseDirectory),
+    ignorePatterns,
     jsPlugins: Object.values(JS_PLUGINS).filter(({ name }) => jsPlugins.has(name)),
     options: needsTypeAware && hasTypeAwareBackend(baseDirectory) ? { typeAware: true } : {},
     overrides,
@@ -503,7 +823,6 @@ export async function createOxlintConfig({
           ? { version: reactVersionSetting }
           : reactVersion && { version: reactVersion }),
       },
-      ...(docsRootDir === undefined ? {} : { next: { rootDir: docsRootDir } }),
     },
   };
 }
