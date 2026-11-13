@@ -1,3 +1,6 @@
 {
-  "{scripts,src}/**/*.{js,mjs,jsx,ts,tsx,mts}": ["pnpm eslint --fix", "pnpm prettier:all"]
+  "{scripts,src}/**/*.{js,mjs,jsx,ts,tsx,mts}": [
+    "pnpm eslint --fix --no-warn-ignored",
+    "pnpm prettier:all"
+  ]
 }

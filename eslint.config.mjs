@@ -1,7 +1,8 @@
 import { defineConfig } from 'eslint/config';
 
 import { createBaseConfig } from './src/eslint/baseConfig.mjs';
-import { EXTENSION_TS } from './src/eslint/extensions.mjs';
+import { EXTENSION_TEST_FILE, EXTENSION_TS } from './src/eslint/extensions.mjs';
+import { createTestConfig } from './src/eslint/testConfig.mjs';
 
 export default defineConfig(
   createBaseConfig({ baseDirectory: import.meta.dirname }),
@@ -20,6 +21,10 @@ export default defineConfig(
         },
       },
     },
+  },
+  {
+    files: [`**/*${EXTENSION_TEST_FILE}`],
+    extends: createTestConfig(),
   },
   {
     files: ['scripts/**'],
