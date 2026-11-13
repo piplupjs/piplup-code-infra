@@ -6,16 +6,10 @@ import rule from './no-floating-cleanup.mjs';
 const ruleTester = new RuleTester({
   languageOptions: {
     parser: TSESlintParser,
-    parserOptions: {
-      tsconfigRootDir: import.meta.dirname,
-      projectService: {
-        allowDefaultProject: ['*.ts'],
-      },
-    },
   },
 });
 
-ruleTester.run('no-floating-cleanup', rule, {
+ruleTester.run('no-floating-cleanup', /** @type {any} */ (rule), {
   valid: [
     {
       name: 'stored cleanup function',
@@ -76,8 +70,103 @@ function f() {
 }
       `,
     },
+    {
+      name: 'imported function the file cannot see',
+      code: `
+import { subscribe } from './store';
+subscribe(() => {});
+      `,
+    },
+    {
+      name: 'un-awaited async function returning a cleanup',
+      code: `
+async function connect() {
+  return () => {};
+}
+connect();
+      `,
+    },
+    {
+      name: 'function returning a non-function value',
+      code: `
+function count() {
+  return 1;
+}
+count();
+      `,
+    },
+    {
+      name: 'interface without a call signature',
+      code: `
+interface Result {
+  value: number;
+}
+declare function load(): Result;
+load();
+      `,
+    },
   ],
   invalid: [
+    {
+      name: 'function whose body returns a cleanup function',
+      code: `
+function listen(cb: () => void) {
+  window.addEventListener('resize', cb);
+  return () => window.removeEventListener('resize', cb);
+}
+listen(() => {});
+      `,
+      errors: [{ messageId: 'floatingCleanup', line: 6 }],
+    },
+    {
+      name: 'arrow function variable returning a cleanup function',
+      code: `
+const watch = (cb: () => void) => () => cb();
+watch(() => {});
+      `,
+      errors: [{ messageId: 'floatingCleanup', line: 3 }],
+    },
+    {
+      name: 'awaited async function resolving to a cleanup function',
+      code: `
+declare function connect(): Promise<() => void>;
+async function f() {
+  await connect();
+}
+      `,
+      errors: [{ messageId: 'floatingCleanup', line: 4 }],
+    },
+    {
+      name: 'method of a class instance returning a cleanup function',
+      code: `
+class Store {
+  subscribe(cb: () => void) {
+    return () => cb();
+  }
+}
+const store = new Store();
+store.subscribe(() => {});
+      `,
+      errors: [{ messageId: 'floatingCleanup', line: 8 }],
+    },
+    {
+      name: 'optional call returning a cleanup function',
+      code: `
+type Unsubscribe = () => void;
+declare const store: { subscribe(cb: () => void): Unsubscribe };
+store?.subscribe(() => {});
+      `,
+      errors: [{ messageId: 'floatingCleanup', line: 4 }],
+    },
+    {
+      name: 'function listed in cleanupFunctions',
+      code: `
+import { onAuthStateChanged } from 'firebase/auth';
+onAuthStateChanged(() => {});
+      `,
+      options: [{ cleanupFunctions: ['onAuthStateChanged'] }],
+      errors: [{ messageId: 'floatingCleanup', line: 3 }],
+    },
     {
       name: 'discarded unsubscribe function',
       code: `
