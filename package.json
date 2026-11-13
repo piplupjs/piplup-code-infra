@@ -10,25 +10,21 @@
   "sideEffects": false,
   "exports": {
     "./package.json": "./package.json",
-    "./broken-links-checker": {
-      "types": "./build/broken-links-checker/index.d.mts",
-      "default": "./src/broken-links-checker/index.mjs"
-    },
-    "./changelog": {
-      "types": "./build/changelog/index.d.mts",
-      "default": "./src/changelog/index.mjs"
-    },
     "./eslint": {
       "types": "./build/eslint/index.d.mts",
       "default": "./src/eslint/index.mjs"
     },
     "./eslint/docs": {
-      "types": "./build/eslint/docsConfig.d.mts",
+      "types": "./build/eslint/docs-config.d.mts",
       "default": "./src/eslint/docs-config.mjs"
     },
-    "./github": {
-      "types": "./build/utils/github.d.mts",
-      "default": "./src/utils/github.mjs"
+    "./oxfmt": {
+      "types": "./build/oxfmt.d.mts",
+      "default": "./src/oxfmt.mjs"
+    },
+    "./oxlint": {
+      "types": "./build/oxlint/index.d.mts",
+      "default": "./src/oxlint/index.mjs"
     },
     "./prettier": {
       "types": "./build/prettier.d.mts",
@@ -55,10 +51,10 @@
     "typescript": "tsc -p tsconfig.json",
     "clean": "node scripts/clean.mjs",
     "release": "node scripts/release.mjs",
-    "test": "vitest run"
+    "test": "vitest run",
+    "oxlint:update-rules": "node scripts/update-oxlint-rules.mjs"
   },
   "files": [
-    "bin",
     "build",
     "src",
     "README.md",
@@ -66,7 +62,8 @@
     "!src/**/__fixtures__/**",
     "!src/**/*.test.*",
     "!src/setup-vitest.ts",
-    "!src/utils/test-utils.mjs"
+    "!src/utils/test-utils.mjs",
+    "!src/utils/oxlint-rule-tester.mjs"
   ],
   "publishConfig": {
     "access": "public"
@@ -78,22 +75,9 @@
     "@eslint/compat": "^2.1.1",
     "@eslint/js": "^10.0.1",
     "@eslint/json": "^2.1.1",
-    "@inquirer/confirm": "^6.4.0",
-    "@inquirer/select": "^5.3.0",
-    "@octokit/auth-action": "^6.0.3",
-    "@octokit/plugin-retry": "^8.1.1",
-    "@octokit/plugin-throttling": "^11.0.5",
-    "@octokit/rest": "^22.0.1",
-    "@pnpm/config.version-policy": "^1100.2.10",
-    "@pnpm/find-workspace-dir": "^1000.1.5",
-    "@pnpm/parse-wanted-dependency": "^1001.0.0",
     "@typescript-eslint/types": "^8.72.2",
     "@typescript-eslint/utils": "^8.72.2",
     "@vitest/eslint-plugin": "^1.6.28",
-    "chalk": "^6.0.1",
-    "content-type": "^3.1.1",
-    "env-ci": "^11.2.0",
-    "es-toolkit": "^1.53.2",
     "eslint-config-prettier": "^10.1.8",
     "eslint-import-resolver-typescript": "^4.4.4",
     "eslint-module-utils": "^2.14.0",
@@ -108,16 +92,10 @@
     "eslint-plugin-react-compiler": "19.1.0-rc.2",
     "eslint-plugin-react-hooks": "7.1.1",
     "eslint-plugin-testing-library": "^7.16.2",
-    "execa": "^10.2.1",
-    "git-url-parse": "^16.1.0",
     "globals": "^17.14.0",
     "globby": "^16.2.4",
-    "html-validate": "^11.21.0",
     "minimatch": "^11.0.8",
-    "node-html-parser": "^9.0.7",
     "postcss-styled-syntax": "^0.7.4",
-    "rehype-slug": "^6.0.0",
-    "rehype-stringify": "^10.0.1",
     "remark-frontmatter": "^5.0.0",
     "remark-gfm": "^4.0.1",
     "remark-lint": "^10.0.1",
@@ -132,20 +110,19 @@
     "remark-lint-no-undefined-references": "^5.0.2",
     "remark-lint-no-unused-definitions": "^4.0.2",
     "remark-lint-table-pipes": "^5.0.1",
-    "remark-parse": "^11.0.0",
-    "remark-rehype": "^11.1.2",
     "semver": "^7.8.6",
     "stylelint-config-standard": "^41.0.0",
     "typescript-eslint": "^8.72.2",
     "unified": "^11.0.5",
     "unified-lint-rule": "^3.0.1",
     "unist-util-visit": "^5.2.0",
-    "yaml": "^2.9.1",
-    "yargs": "^18.2.0"
+    "yaml": "^2.9.1"
   },
   "peerDependencies": {
     "@next/eslint-plugin-next": "*",
     "eslint": "^9.0.0 || ^10.0.0",
+    "oxfmt": "^0.75.0",
+    "oxlint": "^1.93.0",
     "prettier": "^3.0.0",
     "stylelint": "^18.0.0"
   },
@@ -154,6 +131,12 @@
       "optional": true
     },
     "eslint": {
+      "optional": true
+    },
+    "oxfmt": {
+      "optional": true
+    },
+    "oxlint": {
       "optional": true
     },
     "prettier": {
@@ -167,34 +150,26 @@
     "@commitlint/cli": "^21.2.4",
     "@commitlint/config-conventional": "^21.2.4",
     "@next/eslint-plugin-next": "^16.4.6",
-    "@octokit/types": "18.0.0",
-    "@types/content-type": "^2.0.0",
-    "@types/env-ci": "3.1.4",
     "@types/eslint-plugin-jsx-a11y": "^6.10.1",
     "@types/estree": "^1.0.8",
     "@types/estree-jsx": "^1.0.5",
     "@types/mdast": "^4.0.4",
     "@types/node": "^26.6.6",
     "@types/semver": "^7.8.0",
-    "@types/yargs": "^17.0.35",
     "@typescript-eslint/parser": "^8.72.2",
     "@typescript-eslint/rule-tester": "^8.72.2",
     "enquirer": "^2.4.1",
     "eslint": "^10.14.0",
-    "get-port": "7.2.0",
     "husky": "^9.1.7",
+    "oxfmt": "0.75.0",
+    "oxlint": "1.93.0",
     "prettier": "^3.10.1",
     "pretty-quick": "^4.2.2",
     "remark": "^15.0.1",
     "remark-mdx": "^3.1.1",
     "rimraf": "^6.1.2",
-    "serve": "14.2.6",
     "stylelint": "^18.0.0",
-    "type-fest": "^5.10.0",
     "typescript": "~6.0.3",
     "vitest": "^5.1.0"
-  },
-  "bin": {
-    "code-infra": "./bin/code-infra.mjs"
   }
 }

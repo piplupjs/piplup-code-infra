@@ -8,5 +8,12 @@
     "noEmit": false
   },
   "include": ["src/**/*"],
-  "exclude": ["**/*.spec.*", "**/*.test.*", "**/setup-vitest.ts", "**/test-utils.mjs"]
+  "exclude": [
+    "**/*.spec.*",
+    "**/*.test.*",
+    "**/__fixtures__/**",
+    "**/setup-vitest.ts",
+    "**/test-utils.mjs",
+    "**/oxlint-rule-tester.mjs"
+  ]
 }

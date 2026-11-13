@@ -25,6 +25,8 @@ pnpm add -D @piplup/code-infra
 | `@piplup/code-infra/prettier`    | `createBaseConfig`, `docsOverrides`                                                                        |
 | `@piplup/code-infra/stylelint`   | Stylelint config, including CSS-in-JS                                                                      |
 | `@piplup/code-infra/remark`      | `createRemarkConfig` for `.remarkrc.mjs`; also used by the ESLint Markdown rules                           |
+| `@piplup/code-infra/oxlint`      | `createOxlintConfig`: the ESLint rules above, run by oxlint                                                |
+| `@piplup/code-infra/oxfmt`       | `createOxfmtConfig`, `docsOverrides`: the Prettier config above, for oxfmt                                 |
 
 `eslint.config.mjs`:
 
@@ -56,47 +58,42 @@ import { createRemarkConfig } from '@piplup/code-infra/remark';
 export default createRemarkConfig();
 ```
 
-## CLI
+## oxlint and oxfmt
 
-The package installs a `code-infra` binary. Run `pnpm code-infra <command> --help` for each command's options.
+oxlint and oxfmt can replace ESLint and Prettier for JavaScript and TypeScript. They run the same rules and format the same way.
 
-| Command                 | What it does                                                                            |
-| ----------------------- | --------------------------------------------------------------------------------------- |
-| `copy-files`            | Copies files (README, LICENSE, globs) into a package's build output                     |
-| `validate-built-types`  | Checks a package's built `.d.ts` files for imports of local files that aren't published |
-| `list-workspaces`       | Lists the workspace packages, optionally only the public or private ones                |
-| `publish`               | Publishes the public packages and creates the GitHub release                            |
-| `publish-canary`        | Publishes canary versions of the packages changed since the last canary                 |
-| `publish-new-package`   | Publishes an empty first version of packages that aren't on npm yet                     |
-| `generate-changelog`    | Generates a changelog from the merged pull requests since the last version tag          |
-| `baseline`              | Prints the commit a branch should be compared against                                   |
-| `rename-scope`          | Renames the npm scope of the workspace packages                                         |
-| `set-version-overrides` | Sets pnpm overrides for a dependency version, e.g. to test against another React        |
+`oxlint.config.ts`:
 
-### GitHub access
+```ts
+import { createOxlintConfig } from '@piplup/code-infra/oxlint';
 
-Commands that call the GitHub API read a token from `GITHUB_TOKEN` or `GH_TOKEN`. On a developer machine without either, they use the [GitHub CLI](https://cli.github.com/) token, so run `gh auth login` once.
+export default await createOxlintConfig({ baseDirectory: import.meta.dirname });
+```
 
-The repository's root `package.json` `repository` field decides which remote is the canonical one: `upstream` or `origin`, whichever points at a GitHub repository of that owner. Without the field, any GitHub remote counts.
+`createOxlintConfig` reads the rules from the ESLint config, so it needs `eslint` installed. It takes the same options as `createBaseConfig`, plus `docs` (`true`, or `{ rootDir }`) for the `createDocsConfig` rules. It enables the test file rules for `**/*.test.*` files. oxlint runs a rule natively when it implements it. Otherwise it loads the rule's ESLint plugin, because oxlint has no native version of it.
 
-### Adding and publishing new packages
+`.oxfmtrc.json` can't import a config, so use `oxfmt.config.ts`:
 
-npm Trusted Publishing only works for packages that already exist on npm. Before the publish workflow can publish a new public package, publish it once by hand:
+```ts
+import { createOxfmtConfig } from '@piplup/code-infra/oxfmt';
 
-1. Log in to npm:
+export default createOxfmtConfig();
+```
 
-   ```bash
-   npm login
-   ```
+oxlint only lints JavaScript and TypeScript. To keep linting JSON, `package.json` and Markdown, run ESLint on those files alone:
 
-2. Publish an empty first version of the packages that aren't on npm yet. The command lists them and asks before publishing. Add `--dryRun` to try it first, or `--otp=<code>` if npm asks for a one-time password:
+```js
+import { createBaseConfig } from '@piplup/code-infra/eslint';
+import { defineConfig } from 'eslint/config';
 
-   ```bash
-   pnpm code-infra publish-new-package
-   ```
+export default defineConfig(createBaseConfig({ baseDirectory: import.meta.dirname }), {
+  // oxlint lints these.
+  ignores: ['**/*.{js,mjs,cjs,jsx,ts,tsx,mts,cts}'],
+});
+```
 
-3. On npm, open each new package's settings (`https://www.npmjs.com/package/<name>/access`) and add a Trusted Publisher for GitHub Actions, naming the repository and the publish workflow file.
+Differences from ESLint:
 
-4. Under **Publishing access**, require two-factor authentication and disallow tokens, then save.
-
-Then run the publish workflow again.
+- oxlint reserves the names of its own plugins. A rule it loads from an ESLint plugin with the same name runs under a `-js` name, for example `react-js/prop-types` or `typescript-js/naming-convention`, and that's the name its reports show. `eslint-disable` comments with the ESLint name still turn these rules off. But oxlint reports those comments as unused when it runs with `--report-unused-disable-directives`.
+- Rules that need type information, such as `@typescript-eslint/no-deprecated` in the docs config, only run when [`oxlint-tsgolint`](https://oxc.rs/docs/guide/usage/linter/type-aware.html) is installed.
+- After upgrading oxlint, run `pnpm oxlint:update-rules` in this repository, so the config knows which rules oxlint implements natively.

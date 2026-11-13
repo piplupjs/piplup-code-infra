@@ -1,6 +1,6 @@
-import nextjs from '@next/eslint-plugin-next';
-
 import { defineConfig } from 'eslint/config';
+
+import { configs as nextConfigs } from '../plugins/next.mjs';
 
 import { EXTENSION_TS } from './extensions.mjs';
 
@@ -12,21 +12,8 @@ import { EXTENSION_TS } from './extensions.mjs';
  * @returns {import('eslint').Linter.Config[]}
  */
 export function createDocsConfig({ rootDir = 'docs' } = {}) {
-  /**
-   * @type {any}
-   */
-  const nextjsAlias = nextjs;
-
-  // `nextjs.flatConfig.recommended` for Next.js v15 supports.
-  // `nextjs.configs.recommended` for Next.js v16 support
-  // See https://github.com/vercel/next.js/pull/83763 for the breaking change details
-  // Drop the `flatConfig` branch once Next.js 15 is no longer supported.
-  const recommendedConfig = nextjs.flatConfig
-    ? nextjsAlias.flatConfig.recommended
-    : nextjsAlias.configs.recommended;
-
   return defineConfig(
-    recommendedConfig,
+    nextConfigs.recommended,
     {
       settings: {
         next: {

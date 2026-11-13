@@ -2,8 +2,9 @@ import * as fs from 'node:fs';
 import * as path from 'node:path';
 
 import { defineConfig } from 'eslint/config';
-import nPlugin from 'eslint-plugin-n';
 import { globbySync } from 'globby';
+
+import nPlugin from '../plugins/n.mjs';
 
 import { EXTENSION_TEST_FILE, EXTENSION_TS } from './extensions.mjs';
 

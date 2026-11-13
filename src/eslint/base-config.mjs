@@ -1,20 +1,21 @@
 import fs from 'node:fs';
 import * as path from 'node:path';
 
-import { includeIgnoreFile, fixupConfigRules } from '@eslint/compat';
+import { includeIgnoreFile } from '@eslint/compat';
 import eslintJs from '@eslint/js';
 import { defineConfig } from 'eslint/config';
 import prettier from 'eslint-config-prettier/flat';
-import compatPlugin from 'eslint-plugin-compat';
-import importPlugin from 'eslint-plugin-import';
-import jsxA11yPlugin from 'eslint-plugin-jsx-a11y';
 import * as mdx from 'eslint-plugin-mdx';
-import nPlugin from 'eslint-plugin-n';
-import reactPlugin from 'eslint-plugin-react';
-import { configs as reactCompilerPluginConfigs } from 'eslint-plugin-react-compiler';
-import reactHooks from 'eslint-plugin-react-hooks';
 import globals from 'globals';
 import * as tseslint from 'typescript-eslint';
+
+import { configs as compatConfigs } from '../plugins/compat.mjs';
+import { configs as importConfigs } from '../plugins/import.mjs';
+import { configs as jsxA11yConfigs } from '../plugins/jsx-a11y.mjs';
+import nPlugin from '../plugins/n.mjs';
+import { configs as reactCompilerConfigs } from '../plugins/react-compiler.mjs';
+import { configs as reactHooksConfigs } from '../plugins/react-hooks.mjs';
+import { configs as reactConfigs } from '../plugins/react.mjs';
 
 import { EXTENSION_TS } from './extensions.mjs';
 import { createJsonConfig } from './json-config.mjs';
@@ -105,15 +106,15 @@ export function createBaseConfig({
       files: [`**/*${EXTENSION_TS}`],
       extends: defineConfig([
         eslintJs.configs.recommended,
-        // Fix ESLint 10 compatibility for plugins that use deprecated context methods
-        ...fixupConfigRules([importPlugin.flatConfigs.recommended, importPlugin.flatConfigs.react]),
-        ...fixupConfigRules(jsxA11yPlugin.flatConfigs.recommended),
-        ...fixupConfigRules(reactPlugin.configs.flat.recommended),
-        ...fixupConfigRules(reactHooks.configs.flat.recommended),
+        importConfigs.recommended,
+        importConfigs.react,
+        jsxA11yConfigs.recommended,
+        reactConfigs.recommended,
+        reactHooksConfigs.recommended,
         tseslint.configs.recommended,
-        ...fixupConfigRules(importPlugin.flatConfigs.typescript),
-        enableReactCompiler ? reactCompilerPluginConfigs.recommended : {},
-        compatPlugin.configs['flat/recommended'],
+        importConfigs.typescript,
+        enableReactCompiler ? reactCompilerConfigs.recommended : {},
+        compatConfigs.recommended,
         {
           name: 'core',
           extends: createCoreConfig({ enableReactCompiler, consistentTypeImports }),

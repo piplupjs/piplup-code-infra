@@ -1,7 +1,8 @@
-import vitestPlugin from '@vitest/eslint-plugin';
 import { defineConfig } from 'eslint/config';
-import testingLibrary from 'eslint-plugin-testing-library';
 import * as tseslint from 'typescript-eslint';
+
+import { configs as testingLibraryConfigs } from '../plugins/testing-library.mjs';
+import { configs as vitestConfigs } from '../plugins/vitest.mjs';
 
 import { EXTENSION_TS } from './extensions.mjs';
 
@@ -46,9 +47,9 @@ export const baseSpecRules = {
  */
 export function createTestConfig() {
   return defineConfig(
-    vitestPlugin.configs.recommended,
-    testingLibrary.configs['flat/dom'],
-    testingLibrary.configs['flat/react'],
+    vitestConfigs.recommended,
+    testingLibraryConfigs.dom,
+    testingLibraryConfigs.react,
     {
       name: 'Test files',
       languageOptions: {
