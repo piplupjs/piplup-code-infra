@@ -111,6 +111,20 @@ function presetOf(name, base, full) {
 }
 
 /**
+ * Moves the top-level globals into an override for every file. oxlint's `extends` drops the
+ * top-level globals of the configs it extends, but applies their overrides.
+ * @param {Preset} preset
+ * @returns {Preset}
+ */
+function globalsInOverride(preset) {
+  const { globals, ...rest } = preset;
+  if (!globals || Object.keys(globals).length === 0) {
+    return rest;
+  }
+  return { ...rest, overrides: [{ files: ['**/*'], globals }, ...(rest.overrides ?? [])] };
+}
+
+/**
  * Points the `jsPlugins` at modules relative to src/oxlint, so the presets don't depend on where
  * the package is installed. `loadPreset` resolves them again.
  * @param {Preset} preset
@@ -150,6 +164,9 @@ export async function buildPresets() {
           presetOf(name, base, await translate(source));
   }
   return Object.fromEntries(
-    Object.entries(presets).map(([name, preset]) => [name, relativeSpecifiers(preset)]),
+    Object.entries(presets).map(([name, preset]) => [
+      name,
+      relativeSpecifiers(globalsInOverride(preset)),
+    ]),
   );
 }

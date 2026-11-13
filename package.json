@@ -64,6 +64,7 @@
     "!src/setup-vitest.ts",
     "!src/utils/test-utils.mjs",
     "!src/utils/oxlint-rule-tester.mjs",
+    "!src/utils/oxlint-parity.mjs",
     "!src/oxlint/build-presets.mjs"
   ],
   "publishConfig": {

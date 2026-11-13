@@ -3,11 +3,22 @@ import * as fs from 'node:fs/promises';
 import { createRequire } from 'node:module';
 import * as os from 'node:os';
 import * as path from 'node:path';
-import { pathToFileURL } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 
+import { ESLint } from 'eslint';
+import { defineConfig } from 'eslint/config';
 import { describe, expect, it } from 'vitest';
 
-import { buildPresets, PRESET_FILES } from './build-presets.mjs';
+import { configs } from '../eslint/index.mjs';
+import {
+  eslintFindings,
+  eslintRules,
+  mergeOxlintConfigs,
+  oxlintFindings,
+  oxlintRules,
+} from '../utils/oxlint-parity.mjs';
+
+import { buildPresets, PRESET_FILES, PRESET_SOURCES } from './build-presets.mjs';
 import { presets } from './presets.mjs';
 
 const require = createRequire(import.meta.url);
@@ -84,5 +95,105 @@ describe('oxlint presets', () => {
     } finally {
       await fs.rm(dir, { force: true, recursive: true });
     }
+  }, 120_000);
+});
+
+/** @typedef {keyof typeof presets} PresetName */
+
+/**
+ * The ESLint config a list of presets stands for.
+ * @param {PresetName[]} names - `recommended` and the presets after it.
+ */
+function eslintConfigFor(names) {
+  return defineConfig(
+    configs.recommended,
+    ...names.filter((name) => name !== 'recommended').map((name) => PRESET_SOURCES[name]),
+  );
+}
+
+const FILES = [
+  'a.js',
+  'src/a.mjs',
+  'src/a.cjs',
+  'src/a.jsx',
+  'src/a.ts',
+  'src/a.mts',
+  'src/a.tsx',
+  'src/a.d.ts',
+  'src/a.test.ts',
+  'src/a.test.mjs',
+  'src/a.spec.ts',
+  'src/a.spec.test.ts',
+  'docs/a.tsx',
+  'docs/pages/a.mjs',
+  'docs/a.test.tsx',
+  'docs/a.spec.ts',
+  'docs/next.config.mjs',
+  'docs/scripts/build.ts',
+];
+
+describe('oxlint presets, compared with their ESLint configs', () => {
+  /** @type {PresetName[][]} */
+  const combinations = [
+    ['recommended'],
+    ['recommended', 'reactCompiler'],
+    ['recommended', 'test'],
+    ['recommended', 'spec'],
+    ['recommended', 'docs'],
+    ['recommended', 'reactCompiler', 'test', 'spec', 'docs'],
+  ];
+
+  it.each(combinations.map((names) => [names.join(' + '), names]))(
+    'enable the rules ESLint does for each kind of file, for %s',
+    { timeout: 60_000 },
+    async (_label, names) => {
+      const eslint = new ESLint({
+        overrideConfig: eslintConfigFor(names),
+        overrideConfigFile: true,
+      });
+      const config = mergeOxlintConfigs(names.map((name) => presets[name]));
+      for (const file of FILES) {
+        // eslint-disable-next-line no-await-in-loop -- one at a time keeps failures readable
+        expect(oxlintRules(config, file), file).toEqual(await eslintRules(eslint, file));
+      }
+    },
+  );
+
+  it('report the same problems as ESLint on the fixture project', async () => {
+    const fixtureDir = fileURLToPath(new URL('./__fixtures__/parity', import.meta.url));
+    const files = (await fs.readdir(path.join(fixtureDir, 'src'))).map((file) =>
+      path.posix.join('src', file),
+    );
+    const eslint = new ESLint({
+      cwd: fixtureDir,
+      overrideConfig: eslintConfigFor(['recommended', 'test']),
+      overrideConfigFile: true,
+    });
+    const fromEslint = await eslintFindings(eslint, fixtureDir, files);
+
+    const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'oxlint-presets-parity-'));
+    /** @type {Set<string>} */
+    let fromOxlint;
+    try {
+      const configPath = path.join(dir, 'oxlint.config.ts');
+      const indexUrl = pathToFileURL(path.join(import.meta.dirname, 'index.mjs')).href;
+      await fs.writeFile(
+        configPath,
+        `import { presets } from '${indexUrl}';\n\nexport default { extends: [presets.recommended, presets.test] };\n`,
+      );
+      fromOxlint = oxlintFindings(configPath, fixtureDir, files);
+    } finally {
+      await fs.rm(dir, { force: true, recursive: true });
+    }
+
+    expect(fromEslint.size).toBeGreaterThan(25);
+    expect({
+      onlyEslint: [...fromEslint].filter((item) => !fromOxlint.has(item)),
+      onlyOxlint: [...fromOxlint].filter((item) => !fromEslint.has(item)),
+    }).toEqual({
+      onlyEslint: [],
+      // As with `createOxlintConfig`: oxlint matches the comment against its own rule names.
+      onlyOxlint: ['src/directives.ts:7 unused-directive'],
+    });
   }, 120_000);
 });

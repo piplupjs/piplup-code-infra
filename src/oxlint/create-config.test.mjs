@@ -1,4 +1,4 @@
-import { execFileSync, spawnSync } from 'node:child_process';
+import { spawnSync } from 'node:child_process';
 import * as fs from 'node:fs/promises';
 import { createRequire } from 'node:module';
 import * as os from 'node:os';
@@ -7,20 +7,25 @@ import { fileURLToPath } from 'node:url';
 
 import { ESLint } from 'eslint';
 import { defineConfig } from 'eslint/config';
-import { minimatch } from 'minimatch';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 import { configs as docsConfigs } from '../eslint/docs.mjs';
 import { EXTENSION_TEST_FILE } from '../eslint/extensions.mjs';
 import { configs, nodeSupport } from '../eslint/index.mjs';
+import {
+  eslintFindings,
+  eslintRules,
+  oxlintBin,
+  oxlintFindings,
+  oxlintRules,
+} from '../utils/oxlint-parity.mjs';
 
-import { createOxlintConfig, DROP_OPTIONS, expandGlob, routeRule } from './create-config.mjs';
+import { createOxlintConfig, expandGlob, routeRule } from './create-config.mjs';
 
 /** @typedef {Parameters<typeof defineConfig>[number]} ConfigWithExtends */
 
 const require = createRequire(import.meta.url);
 const oxlintPackageJsonPath = require.resolve('oxlint/package.json');
-const oxlintBin = path.join(path.dirname(oxlintPackageJsonPath), 'bin', 'oxlint');
 const fixtureDir = fileURLToPath(new URL('./__fixtures__/parity', import.meta.url));
 
 /** @type {ConfigWithExtends} */
@@ -32,73 +37,6 @@ const docsFiles = {
   files: ['docs/**/*.{js,mjs,cjs,jsx,ts,tsx,mts,cts}'],
   settings: { next: { rootDir: 'docs' } },
 };
-
-/**
- * The rules oxlint enables for a file, from the top-level rules and the overrides that match it.
- * @param {Awaited<ReturnType<typeof createOxlintConfig>>} config
- * @param {string} file
- */
-function oxlintRules(config, file) {
-  const rules = { ...config.rules };
-  for (const override of config.overrides) {
-    const matches =
-      override.files.some((glob) => minimatch(file, glob, { dot: true })) &&
-      !override.excludeFiles?.some((glob) => minimatch(file, glob, { dot: true }));
-    if (matches) {
-      Object.assign(rules, override.rules);
-    }
-  }
-  return normalizeRules(rules);
-}
-
-/**
- * The enabled rules, sorted, with severities as names.
- * @param {Record<string, unknown>} rules
- */
-function normalizeRules(rules) {
-  const names = ['off', 'warn', 'error'];
-  /** @param {unknown} severity */
-  const name = (severity) => (typeof severity === 'number' ? names[severity] : severity);
-  return Object.fromEntries(
-    Object.entries(rules)
-      .map(([rule, entry]) => [
-        rule,
-        Array.isArray(entry) ? [name(entry[0]), ...entry.slice(1)] : name(entry),
-      ])
-      .filter(([, entry]) => (Array.isArray(entry) ? entry[0] : entry) !== 'off')
-      .sort(([a], [b]) => String(a).localeCompare(String(b))),
-  );
-}
-
-/**
- * The rules ESLint enables for a file, under their oxlint names.
- * @param {ESLint} eslint
- * @param {string} file
- */
-async function eslintRules(eslint, file) {
-  const config = await eslint.calculateConfigForFile(file);
-  return normalizeRules(
-    Object.fromEntries(
-      Object.entries(config.rules)
-        // Turned-off rules may have no oxlint equivalent, and may share one with an enabled rule.
-        .filter(([, entry]) => (Array.isArray(entry) ? entry[0] : entry) !== 0)
-        .map(([rule, entry]) => {
-          const { key } = routeRule(rule);
-          // The builder drops options oxlint rejects that only repeat the defaults.
-          return [key, DROP_OPTIONS.has(key) && Array.isArray(entry) ? entry[0] : entry];
-        }),
-    ),
-  );
-}
-
-/**
- * @param {string} file
- * @param {number} line
- * @param {string} rule
- */
-function finding(file, line, rule) {
-  return `${file.replaceAll('\\', '/')}:${line} ${rule}`;
-}
 
 describe('builtin-rules.json', () => {
   it('lists the rules of the installed oxlint', async () => {
@@ -300,54 +238,23 @@ describe('parity with ESLint', () => {
       overrideConfig: eslintConfig,
       overrideConfigFile: true,
     });
-    const eslintFindings = new Set();
-    for (const result of await eslint.lintFiles(files)) {
-      for (const message of result.messages) {
-        const rule = message.ruleId ? routeRule(message.ruleId).key : 'unused-directive';
-        eslintFindings.add(finding(path.relative(fixtureDir, result.filePath), message.line, rule));
-      }
-    }
+    const fromEslint = await eslintFindings(eslint, fixtureDir, files);
 
     const config = await createOxlintConfig(eslintConfig, { baseDirectory: fixtureDir });
     const configPath = path.join(os.tmpdir(), `oxlint-parity-${process.pid}.json`);
     await fs.writeFile(configPath, JSON.stringify(config));
-    /** @type {string} */
-    let output;
+    /** @type {Set<string>} */
+    let fromOxlint;
     try {
-      output = execFileSync(
-        process.execPath,
-        [oxlintBin, '-c', configPath, '-f', 'unix', '--report-unused-disable-directives', ...files],
-        { cwd: fixtureDir, encoding: 'utf8' },
-      );
-    } catch (error) {
-      output = /** @type {{ stdout: string }} */ (error).stdout;
+      fromOxlint = oxlintFindings(configPath, fixtureDir, files);
     } finally {
       await fs.rm(configPath, { force: true });
     }
-    const oxlintFindings = new Set();
-    for (const line of output.split('\n')) {
-      const match = line.match(/^(.+?):(\d+):\d+: (.*?)(?: \[\w+\/([\w-]+)\(([^)]+)\)\])?$/);
-      if (!match) {
-        continue;
-      }
-      const [, file, lineNumber, message, scope, rule] = match;
-      let key;
-      if (rule) {
-        // oxlint labels the React hooks rules of its `react` plugin `react-hooks`.
-        const configScope = scope === 'react-hooks' ? 'react' : scope;
-        key = configScope === 'eslint' ? rule : `${configScope}/${rule}`;
-      } else if (message.startsWith('Unused eslint-disable directive')) {
-        key = 'unused-directive';
-      } else {
-        continue;
-      }
-      oxlintFindings.add(finding(file, Number(lineNumber), key));
-    }
 
-    expect(eslintFindings.size).toBeGreaterThan(25);
+    expect(fromEslint.size).toBeGreaterThan(25);
     expect({
-      onlyEslint: [...eslintFindings].filter((item) => !oxlintFindings.has(item)),
-      onlyOxlint: [...oxlintFindings].filter((item) => !eslintFindings.has(item)),
+      onlyEslint: [...fromEslint].filter((item) => !fromOxlint.has(item)),
+      onlyOxlint: [...fromOxlint].filter((item) => !fromEslint.has(item)),
     }).toEqual({
       onlyEslint: [],
       // The comment names `@typescript-eslint/naming-convention`, which oxlint runs as
