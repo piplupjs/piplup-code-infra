@@ -1,4 +1,4 @@
-import { includeIgnoreFile } from '@eslint/compat';
+import { fixupConfigRules, fixupPluginRules, includeIgnoreFile } from '@eslint/compat';
 import eslintJs from '@eslint/js';
 import { defineConfig } from 'eslint/config';
 import prettier from 'eslint-config-prettier/flat';
@@ -50,13 +50,13 @@ export function createBaseConfig({
       files: [`**/*${EXTENSION_TS}`],
       extends: defineConfig([
         eslintJs.configs.recommended,
-        importPlugin.flatConfigs.recommended,
-        importPlugin.flatConfigs.react,
-        jsxA11yPlugin.flatConfigs.recommended,
-        reactPlugin.configs.flat.recommended,
-        reactHooks.configs.flat.recommended,
+        // These plugins still call context methods that ESLint 10 removed, so wrap them.
+        ...fixupConfigRules([importPlugin.flatConfigs.recommended, importPlugin.flatConfigs.react]),
+        ...fixupConfigRules(jsxA11yPlugin.flatConfigs.recommended),
+        ...fixupConfigRules(reactPlugin.configs.flat.recommended),
+        ...fixupConfigRules(reactHooks.configs.flat.recommended),
         tseslint.configs.recommended,
-        importPlugin.flatConfigs.typescript,
+        ...fixupConfigRules(importPlugin.flatConfigs.typescript),
         enableReactCompiler ? reactCompilerPluginConfigs.recommended : {},
         compatPlugin.configs['flat/recommended'],
         {
@@ -110,7 +110,7 @@ export function createBaseConfig({
       name: 'ESM JS files',
       files: ['**/*.mjs'],
       plugins: {
-        import: importPlugin,
+        import: fixupPluginRules(importPlugin),
       },
       rules: {
         'import/extensions': [

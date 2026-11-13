@@ -1,9 +1,11 @@
 import postcssStylesSyntax from 'postcss-styled-syntax';
-import standardConfig from 'stylelint-config-standard';
+import { fileURLToPath } from 'node:url';
 
 /** @type {import('stylelint').Config} */
 export default {
-  extends: standardConfig,
+  // Extend by resolved path so stylelint resolves the preset's own `extends` from its install
+  // location. Spreading the imported object breaks under pnpm's strict node_modules layout.
+  extends: fileURLToPath(import.meta.resolve('stylelint-config-standard')),
   rules: {
     // Too opinionated?
     'no-descending-specificity': null,
