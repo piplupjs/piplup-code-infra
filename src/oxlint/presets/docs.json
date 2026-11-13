@@ -1,0 +1,69 @@
+{
+  "plugins": ["nextjs"],
+  "jsPlugins": [{ "name": "next-js", "specifier": "./plugins/next.mjs" }],
+  "settings": { "next": { "rootDir": "docs" } },
+  "overrides": [
+    {
+      "files": [
+        "docs/**/*.js",
+        "docs/**/*.jsx",
+        "docs/**/*.ts",
+        "docs/**/*.tsx",
+        "docs/**/*.cjs",
+        "docs/**/*.cts",
+        "docs/**/*.mjs",
+        "docs/**/*.mts"
+      ],
+      "rules": {
+        "nextjs/google-font-display": [1],
+        "nextjs/google-font-preconnect": [1],
+        "nextjs/next-script-for-ga": [1],
+        "nextjs/no-async-client-component": [1],
+        "nextjs/no-before-interactive-script-outside-document": [1],
+        "nextjs/no-css-tags": [1],
+        "nextjs/no-head-element": [1],
+        "nextjs/no-html-link-for-pages": [1],
+        "nextjs/no-img-element": [1],
+        "next-js/no-location-assign-relative-destination": [1],
+        "nextjs/no-page-custom-font": [1],
+        "nextjs/no-styled-jsx-in-document": [1],
+        "nextjs/no-sync-scripts": [1],
+        "nextjs/no-title-in-document-head": [1],
+        "nextjs/no-typos": [1],
+        "nextjs/no-unwanted-polyfillio": [1],
+        "nextjs/inline-script-id": [2],
+        "nextjs/no-assign-module-variable": [2],
+        "nextjs/no-document-import-in-page": [2],
+        "nextjs/no-duplicate-head": [2],
+        "nextjs/no-head-import-in-document": [2],
+        "nextjs/no-script-component-in-head": [2],
+        "compat/compat": "off",
+        "jsx-a11y/anchor-is-valid": "off",
+        "no-irregular-whitespace": [
+          2,
+          {
+            "skipComments": false,
+            "skipJSXText": true,
+            "skipRegExps": false,
+            "skipStrings": true,
+            "skipTemplates": false
+          }
+        ]
+      }
+    },
+    {
+      "files": [
+        "docs/**/*.js",
+        "docs/**/*.jsx",
+        "docs/**/*.ts",
+        "docs/**/*.tsx",
+        "docs/**/*.cjs",
+        "docs/**/*.cts",
+        "docs/**/*.mjs",
+        "docs/**/*.mts"
+      ],
+      "excludeFiles": ["**/*.config.*", "**/scripts/**"],
+      "rules": { "typescript/no-deprecated": [2] }
+    }
+  ]
+}

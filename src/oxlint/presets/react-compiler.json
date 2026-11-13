@@ -1,0 +1,4 @@
+{
+  "jsPlugins": [{ "name": "react-compiler", "specifier": "../lint/plugins/react-compiler.mjs" }],
+  "rules": { "react-compiler/react-compiler": [2] }
+}

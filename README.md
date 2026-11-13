@@ -73,6 +73,27 @@ export default createRemarkConfig();
 
 oxlint and oxfmt can replace ESLint and Prettier for JavaScript and TypeScript. They run the same rules and format the same way.
 
+### Presets
+
+The presets need no ESLint config, so they load fast. `oxlint.config.ts`:
+
+```ts
+import { presets } from '@piplup/code-infra/oxlint';
+
+export default {
+  extends: [presets.recommended, presets.test],
+  rules: {
+    'no-console': 'off',
+  },
+};
+```
+
+- `presets.recommended` has the JavaScript and TypeScript rules of `configs.recommended`. The others add to it, so list them after it: `reactCompiler`, `test` for `*.test.*` files, `spec` for `*.spec.*` files, and `docs` for a Next.js app in `docs`.
+- Rules that apply to every file are top-level, so your own `rules` can change them. Rules for some files are in `overrides`. Change those in an override of your own.
+- The React version and type-aware linting are set when the config loads. The `docs` rule that needs type information runs when [`oxlint-tsgolint`](https://oxc.rs/docs/guide/usage/linter/type-aware.html) is installed.
+
+### From your ESLint config
+
 `oxlint.config.ts`:
 
 ```ts
@@ -116,4 +137,4 @@ Differences from ESLint:
 
 - oxlint reserves the names of its own plugins. A rule it loads from an ESLint plugin with the same name runs under a `-js` name, for example `react-js/prop-types` or `typescript-js/naming-convention`, and that's the name its reports show. `eslint-disable` comments with the ESLint name still turn these rules off. But oxlint reports those comments as unused when it runs with `--report-unused-disable-directives`.
 - Rules that need type information, such as `@typescript-eslint/no-deprecated` in the docs config, only run when [`oxlint-tsgolint`](https://oxc.rs/docs/guide/usage/linter/type-aware.html) is installed.
-- After upgrading oxlint, run `pnpm oxlint:update-rules` in this repository, so the config knows which rules oxlint implements natively.
+- After upgrading oxlint, run `pnpm oxlint:update-rules` and then `pnpm oxlint:presets` in this repository, so the config knows which rules oxlint implements natively.

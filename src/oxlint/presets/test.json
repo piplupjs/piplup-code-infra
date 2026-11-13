@@ -1,0 +1,91 @@
+{
+  "plugins": ["vitest"],
+  "jsPlugins": [{ "name": "testing-library", "specifier": "../lint/plugins/testing-library.mjs" }],
+  "overrides": [
+    {
+      "files": [
+        "**/*.test.js",
+        "**/*.test.jsx",
+        "**/*.test.ts",
+        "**/*.test.tsx",
+        "**/*.test.cjs",
+        "**/*.test.cts",
+        "**/*.test.mjs",
+        "**/*.test.mts"
+      ],
+      "rules": {
+        "vitest/expect-expect": [
+          2,
+          { "assertFunctionNames": ["expect", "assert"], "additionalTestBlockFunctions": [] }
+        ],
+        "vitest/no-commented-out-tests": [2],
+        "vitest/no-conditional-expect": 2,
+        "vitest/no-disabled-tests": [1],
+        "vitest/no-focused-tests": 2,
+        "vitest/no-identical-title": [2],
+        "vitest/no-import-node-test": [2],
+        "vitest/no-interpolation-in-snapshots": [2],
+        "vitest/no-mocks-import": [2],
+        "vitest/no-standalone-expect": [2, { "additionalTestBlockFunctions": [] }],
+        "vitest/no-unneeded-async-expect-function": [2],
+        "vitest/prefer-called-exactly-once-with": [2],
+        "vitest/require-local-test-context-for-concurrent-snapshots": [2],
+        "vitest/valid-describe-callback": [2],
+        "vitest/valid-expect": [
+          2,
+          {
+            "alwaysAwait": false,
+            "asyncMatchers": ["toReject", "toResolve"],
+            "minArgs": 1,
+            "maxArgs": 2
+          }
+        ],
+        "vitest/valid-expect-in-promise": [2],
+        "vitest/valid-title": [
+          2,
+          { "ignoreTypeOfDescribeName": false, "allowArguments": false, "disallowedWords": [] }
+        ],
+        "testing-library/await-async-events": [2, { "eventModule": "userEvent" }],
+        "testing-library/await-async-queries": [2],
+        "testing-library/await-async-utils": [2],
+        "testing-library/no-await-sync-events": [2, { "eventModules": ["fire-event"] }],
+        "testing-library/no-await-sync-queries": [2],
+        "testing-library/no-global-regexp-flag-in-query": [2],
+        "testing-library/no-promise-in-fire-event": [2],
+        "testing-library/no-wait-for-multiple-assertions": [2],
+        "testing-library/no-wait-for-side-effects": [2],
+        "testing-library/no-wait-for-snapshot": [2],
+        "testing-library/prefer-find-by": [2],
+        "testing-library/prefer-presence-queries": [2],
+        "testing-library/prefer-query-by-disappearance": [2],
+        "testing-library/prefer-screen-queries": [2],
+        "testing-library/no-container": [2],
+        "testing-library/no-debugging-utils": [1],
+        "testing-library/no-dom-import": [2, "react"],
+        "testing-library/no-manual-cleanup": [2],
+        "testing-library/no-render-in-lifecycle": [2],
+        "testing-library/no-unnecessary-act": [2],
+        "testing-library/render-result-naming-convention": [2],
+        "no-empty-function": "off",
+        "typescript/no-non-null-asserted-optional-chain": "off",
+        "compat/compat": "off",
+        "jsx-a11y/anchor-is-valid": "off",
+        "jsx-a11y/click-events-have-key-events": "off",
+        "jsx-a11y/control-has-associated-label": "off",
+        "jsx-a11y/iframe-has-title": "off",
+        "jsx-a11y/label-has-associated-control": "off",
+        "jsx-a11y/mouse-events-have-key-events": "off",
+        "jsx-a11y/no-noninteractive-tabindex": "off",
+        "jsx-a11y/no-static-element-interactions": "off",
+        "jsx-a11y/tabindex-no-positive": "off",
+        "piplup/consistent-production-guard": "off",
+        "piplup/disallow-active-element-as-key-event-target": [2],
+        "react/button-has-type": "off",
+        "react-js/forbid-foreign-prop-types": "off",
+        "react-js/no-unused-prop-types": "off",
+        "react-js/prop-types": "off",
+        "vitest/prefer-importing-vitest-globals": [2]
+      }
+    }
+  ]
+}

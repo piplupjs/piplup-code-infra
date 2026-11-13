@@ -41,7 +41,7 @@
   },
   "scripts": {
     "prepare": "husky",
-    "build": "tsc -p tsconfig.build.json",
+    "build": "pnpm oxlint:presets && tsc -p tsconfig.build.json",
     "eslint": "eslint . --cache --report-unused-disable-directives --ext .js,.ts,.tsx --max-warnings 0",
     "eslint:ci": "eslint . --report-unused-disable-directives --ext .js,.ts,.tsx --max-warnings 0",
     "prettier": "pretty-quick --ignore-path .lintignore",
@@ -51,7 +51,8 @@
     "clean": "node scripts/clean.mjs",
     "release": "node scripts/release.mjs",
     "test": "vitest run",
-    "oxlint:update-rules": "node scripts/update-oxlint-rules.mjs"
+    "oxlint:update-rules": "node scripts/update-oxlint-rules.mjs",
+    "oxlint:presets": "node scripts/build-oxlint-presets.mjs"
   },
   "files": [
     "build",
@@ -62,7 +63,8 @@
     "!src/**/*.test.*",
     "!src/setup-vitest.ts",
     "!src/utils/test-utils.mjs",
-    "!src/utils/oxlint-rule-tester.mjs"
+    "!src/utils/oxlint-rule-tester.mjs",
+    "!src/oxlint/build-presets.mjs"
   ],
   "publishConfig": {
     "access": "public"

@@ -420,27 +420,16 @@ function literalPrefix(pattern) {
 }
 
 /**
- * Builds an oxlint config that runs the same rules, with the same options, as an ESLint flat
- * config, for example one built from `configs.recommended` of `@piplup/code-infra/eslint`.
- *
- * oxlint runs a rule natively when it implements it, and otherwise loads the original ESLint
- * plugin through `jsPlugins`. JSON, `package.json` and Markdown files aren't covered: oxlint
- * only lints JavaScript and TypeScript.
- *
- * ESLint config objects for some of the files become oxlint `overrides`, from their `files` and
- * `ignores`. Each distinct set of files is worked out once, by asking ESLint about files it
- * matches: made-up ones, and the repository's own. Repository files whose rules the overrides
- * don't reproduce, for example because a config's `files` is a function, get an override that
- * lists them.
- *
- * @param {Parameters<typeof defineConfig>[number]} eslintConfig - The ESLint config: what
- * `defineConfig` takes, so it may nest arrays and use `extends`.
- * @param {Object} [options]
- * @param {string} [options.baseDirectory] - The repository root, which file patterns are relative
- * to. Defaults to the current directory.
+ * Translates an ESLint config into an oxlint config, without what depends on the project. See
+ * `createOxlintConfig`.
+ * @param {Parameters<typeof defineConfig>[number]} eslintConfig
+ * @param {Object} options
+ * @param {string} options.baseDirectory
+ * @param {boolean} [options.scanFiles] - Ask ESLint about the repository's files too, and list the
+ * ones the overrides get wrong. Off for configs that don't belong to a repository, like presets.
  * @returns {Promise<OxlintConfig>}
  */
-export async function createOxlintConfig(eslintConfig, { baseDirectory = process.cwd() } = {}) {
+export async function translateConfig(eslintConfig, { baseDirectory, scanFiles = true }) {
   const flatConfig = defineConfig(eslintConfig);
   const eslint = new ESLint({
     cwd: baseDirectory,
@@ -510,12 +499,14 @@ export async function createOxlintConfig(eslintConfig, { baseDirectory = process
       }
     }
   }
-  const repositoryFiles = globbySync(`**/*.${JS_EXTENSIONS}`, {
-    cwd: baseDirectory,
-    dot: true,
-    gitignore: true,
-    ignore: ['**/node_modules/**', '**/.git/**'],
-  });
+  const repositoryFiles = scanFiles
+    ? globbySync(`**/*.${JS_EXTENSIONS}`, {
+        cwd: baseDirectory,
+        dot: true,
+        gitignore: true,
+        ignore: ['**/node_modules/**', '**/.git/**'],
+      })
+    : [];
   for (const file of repositoryFiles) {
     samples.add(file);
   }
@@ -524,7 +515,6 @@ export async function createOxlintConfig(eslintConfig, { baseDirectory = process
   const plugins = new Set();
   /** @type {Set<string>} */
   const jsPlugins = new Set();
-  let needsTypeAware = false;
 
   /**
    * @param {Record<string, RuleEntry>} eslintRules
@@ -544,7 +534,6 @@ export async function createOxlintConfig(eslintConfig, { baseDirectory = process
       if (route.jsPlugin) {
         jsPlugins.add(route.jsPlugin);
       }
-      needsTypeAware ||= Boolean(route.typeAware);
       // Two ESLint rules can map to one oxlint rule, e.g. `no-unused-vars` and
       // `@typescript-eslint/no-unused-vars`. ESLint never enables both for a file.
       out[route.key] =
@@ -794,35 +783,101 @@ export async function createOxlintConfig(eslintConfig, { baseDirectory = process
     addOverride({ files: leftover.files.sort() }, () => true, [leftover]);
   }
 
-  const reactVersion = findReactVersion(baseDirectory);
-  /** @type {any} */
-  const reactSettings = settings.react ?? {};
-  const { version: reactVersionSetting, ...otherReactSettings } = reactSettings;
-
-  if (needsTypeAware && !hasTypeAwareBackend(baseDirectory)) {
-    console.warn(
-      '@piplup/code-infra: some rules need type information. Install `oxlint-tsgolint` to run them.',
-    );
-  }
-
   return {
     // Only the rules listed below run.
     categories: { correctness: 'off' },
     globals: root.globals,
     ignorePatterns,
     jsPlugins: Object.values(JS_PLUGINS).filter(({ name }) => jsPlugins.has(name)),
-    options: needsTypeAware && hasTypeAwareBackend(baseDirectory) ? { typeAware: true } : {},
+    options: {},
     overrides,
     plugins: [...plugins].sort(),
     rules: root.rules,
-    settings: {
-      ...settings,
-      react: {
-        ...otherReactSettings,
-        ...(reactVersionSetting && reactVersionSetting !== 'detect'
-          ? { version: reactVersionSetting }
-          : reactVersion && { version: reactVersion }),
-      },
-    },
+    settings,
   };
+}
+
+/**
+ * @param {string} key - An oxlint rule name, like `typescript/no-deprecated`.
+ * @returns {boolean} Whether the rule needs type information.
+ */
+function isTypeAware(key) {
+  for (const [scope, { prefix }] of Object.entries(SCOPE_NAMES)) {
+    if (prefix ? key.startsWith(prefix) : !key.includes('/')) {
+      if (typeAwareRules.has(`${scope}/${key.slice(prefix.length)}`)) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
+/**
+ * Adds what depends on the project rather than on the ESLint config: the React version, which
+ * oxlint can't detect, and type-aware linting when `oxlint-tsgolint` is installed and a rule
+ * needs it.
+ * @template {Partial<OxlintConfig>} T
+ * @param {T} config - A whole config, or a preset that adds to one.
+ * @param {string} baseDirectory
+ * @returns {T}
+ */
+export function finalizeConfig(config, baseDirectory) {
+  /** @type {any} */
+  const { version, ...reactSettings } = config.settings?.react ?? {};
+  const reactVersion = version && version !== 'detect' ? version : findReactVersion(baseDirectory);
+  const needsTypeAware = [
+    config.rules ?? {},
+    ...(config.overrides ?? []).map(({ rules }) => rules ?? {}),
+  ].some((rules) =>
+    Object.entries(rules).some(([key, entry]) => isEnabled(entry) && isTypeAware(key)),
+  );
+  const typeAware = needsTypeAware && hasTypeAwareBackend(baseDirectory);
+  if (needsTypeAware && !typeAware) {
+    console.warn(
+      '@piplup/code-infra: some rules need type information. Install `oxlint-tsgolint` to run them.',
+    );
+  }
+  return {
+    ...config,
+    ...(config.options || typeAware
+      ? { options: { ...config.options, ...(typeAware ? { typeAware: true } : {}) } }
+      : {}),
+    ...(config.settings
+      ? {
+          settings: {
+            ...config.settings,
+            // Only where the config has React settings, so a preset that adds rules for some
+            // files doesn't repeat them.
+            ...(config.settings.react
+              ? { react: { ...reactSettings, ...(reactVersion ? { version: reactVersion } : {}) } }
+              : {}),
+          },
+        }
+      : {}),
+  };
+}
+
+/**
+ * Builds an oxlint config that runs the same rules, with the same options, as an ESLint flat
+ * config, for example one built from `configs.recommended` of `@piplup/code-infra/eslint`.
+ *
+ * oxlint runs a rule natively when it implements it, and otherwise loads the original ESLint
+ * plugin through `jsPlugins`. JSON, `package.json` and Markdown files aren't covered: oxlint
+ * only lints JavaScript and TypeScript.
+ *
+ * ESLint config objects for some of the files become oxlint `overrides`, from their `files` and
+ * `ignores`. Each distinct set of files is worked out once, by asking ESLint about files it
+ * matches: made-up ones, and the repository's own. Repository files whose rules the overrides
+ * don't reproduce, for example because a config's `files` is a function, get an override that
+ * lists them.
+ *
+ * @param {Parameters<typeof defineConfig>[number]} eslintConfig - The ESLint config: what
+ * `defineConfig` takes, so it may nest arrays and use `extends`.
+ * @param {Object} [options]
+ * @param {string} [options.baseDirectory] - The repository root, which file patterns are relative
+ * to. Defaults to the current directory.
+ * @returns {Promise<OxlintConfig>}
+ */
+export async function createOxlintConfig(eslintConfig, { baseDirectory = process.cwd() } = {}) {
+  return finalizeConfig(await translateConfig(eslintConfig, { baseDirectory }), baseDirectory);
 }
