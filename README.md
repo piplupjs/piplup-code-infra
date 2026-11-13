@@ -25,7 +25,7 @@ pnpm add -D @piplup/code-infra
 | `@piplup/code-infra/prettier`    | `createBaseConfig`, `docsOverrides`                                                                       |
 | `@piplup/code-infra/stylelint`   | Stylelint config, including CSS-in-JS                                                                     |
 | `@piplup/code-infra/remark`      | `createRemarkConfig` for `.remarkrc.mjs`; also used by the ESLint Markdown rules                          |
-| `@piplup/code-infra/oxlint`      | `presets`, `rules`, and `createOxlintConfig` for an ESLint config's rules, run by oxlint                  |
+| `@piplup/code-infra/oxlint`      | `presets`, `combine`, `rules`, and `createOxlintConfig` for an ESLint config's rules, run by oxlint       |
 | `@piplup/code-infra/oxfmt`       | `createOxfmtConfig`, `docsOverrides`: the Prettier config above, for oxfmt                                |
 
 `eslint.config.mjs`:
@@ -78,21 +78,20 @@ oxlint and oxfmt can replace ESLint and Prettier for JavaScript and TypeScript. 
 The presets need no ESLint config, so they load fast. `oxlint.config.ts`:
 
 ```ts
-import { presets, rules } from '@piplup/code-infra/oxlint';
+import { combine, presets, rules } from '@piplup/code-infra/oxlint';
 
-export default {
-  extends: [presets.recommended, presets.test],
+export default combine(presets.recommended, presets.test, {
   rules: rules({
     'no-console': 'off',
     '@typescript-eslint/no-unused-vars': 'warn',
     'react/prop-types': 'off',
   }),
-};
+});
 ```
 
 - `presets.recommended` has the JavaScript and TypeScript rules of `configs.recommended`. The others add to it, so list them after it: `reactCompiler`, `test` for `*.test.*` files, `spec` for `*.spec.*` files, and `docs` for a Next.js app in `docs`.
+- `combine()` merges the presets and your config into one, with later configs winning, as in an ESLint flat config. A rule you set at the top level applies to every file, including the files a preset has its own rules for, like test files. Use `combine()` rather than oxlint's `extends`, which drops the `settings` and `options` of the configs it extends, such as the React version, the browsers for `compat/compat` and type-aware linting.
 - `rules()` takes rules by their ESLint names and gives them the names the presets use in oxlint: oxlint's own name for a rule it implements, like `no-unused-vars` for `@typescript-eslint/no-unused-vars`, and the plugin's `-js` name for a rule it runs from an ESLint plugin, like `react-js/prop-types`.
-- Rules that apply to every file are top-level, so your own `rules` can change them. Rules for some files are in `overrides`. Change those in an override of your own.
 - The React version and type-aware linting are set when the config loads. The `docs` rule that needs type information runs when [`oxlint-tsgolint`](https://oxc.rs/docs/guide/usage/linter/type-aware.html) is installed.
 
 ### From your ESLint config

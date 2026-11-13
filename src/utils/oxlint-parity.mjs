@@ -41,19 +41,6 @@ export function normalizeRules(rules) {
 }
 
 /**
- * Combines configs as oxlint's `extends` does: later top-level rules win, and every config's
- * overrides apply, in order.
- * @param {OxlintConfig[]} configs
- * @returns {OxlintConfig}
- */
-export function mergeOxlintConfigs(configs) {
-  return {
-    overrides: configs.flatMap((config) => config.overrides ?? []),
-    rules: Object.assign({}, ...configs.map((config) => config.rules ?? {})),
-  };
-}
-
-/**
  * The rules oxlint enables for a file, from the top-level rules and the overrides that match it.
  * @param {OxlintConfig} config
  * @param {string} file

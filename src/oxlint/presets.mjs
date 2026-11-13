@@ -48,9 +48,9 @@ function preset(name, file) {
 }
 
 /**
- * oxlint configs for `extends` in `oxlint.config.ts`, with the rules of the ESLint configs of the
- * same names. `recommended` is a whole config; the others add to it, so list them after it. Each
- * is read when first used.
+ * oxlint configs for `combine()` in `oxlint.config.ts`, with the rules of the ESLint configs of
+ * the same names. `recommended` is a whole config; the others add to it, so list them after it.
+ * Each is read when first used.
  */
 export const presets = {
   /**

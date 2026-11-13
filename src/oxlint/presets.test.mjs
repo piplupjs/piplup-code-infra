@@ -13,12 +13,12 @@ import { configs } from '../eslint/index.mjs';
 import {
   eslintFindings,
   eslintRules,
-  mergeOxlintConfigs,
   oxlintFindings,
   oxlintRules,
 } from '../utils/oxlint-parity.mjs';
 
 import { buildPresets, PRESET_FILES, PRESET_SOURCES } from './build-presets.mjs';
+import { combine } from './combine.mjs';
 import { presets } from './presets.mjs';
 
 const require = createRequire(import.meta.url);
@@ -58,12 +58,15 @@ describe('oxlint presets', () => {
       await fs.writeFile(
         path.join(dir, 'oxlint.config.ts'),
         [
-          `import { presets } from '${presetsUrl}';`,
+          `import { combine, presets } from '${presetsUrl}';`,
           '',
-          'export default {',
-          '  extends: [presets.recommended, presets.test, presets.spec, presets.reactCompiler],',
-          "  rules: { 'no-console': 'off' },",
-          '};',
+          'export default combine(',
+          '  presets.recommended,',
+          '  presets.test,',
+          '  presets.spec,',
+          '  presets.reactCompiler,',
+          "  { rules: { 'no-console': 'off' } },",
+          ');',
           '',
         ].join('\n'),
       );
@@ -151,7 +154,7 @@ describe('oxlint presets, compared with their ESLint configs', () => {
         overrideConfig: eslintConfigFor(names),
         overrideConfigFile: true,
       });
-      const config = mergeOxlintConfigs(names.map((name) => presets[name]));
+      const config = combine(...names.map((name) => presets[name]));
       for (const file of FILES) {
         // eslint-disable-next-line no-await-in-loop -- one at a time keeps failures readable
         expect(oxlintRules(config, file), file).toEqual(await eslintRules(eslint, file));
@@ -179,7 +182,7 @@ describe('oxlint presets, compared with their ESLint configs', () => {
       const indexUrl = pathToFileURL(path.join(import.meta.dirname, 'index.mjs')).href;
       await fs.writeFile(
         configPath,
-        `import { presets } from '${indexUrl}';\n\nexport default { extends: [presets.recommended, presets.test] };\n`,
+        `import { combine, presets } from '${indexUrl}';\n\nexport default combine(presets.recommended, presets.test);\n`,
       );
       fromOxlint = oxlintFindings(configPath, fixtureDir, files);
     } finally {

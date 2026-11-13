@@ -71,7 +71,7 @@ describe('rules', () => {
       const lint = async (rulesSource) => {
         await fs.writeFile(
           path.join(dir, 'oxlint.config.ts'),
-          `import { presets, rules } from '${indexUrl}';\n\nexport default { extends: [presets.recommended], rules: ${rulesSource} };\n`,
+          `import { combine, presets, rules } from '${indexUrl}';\n\nexport default combine(presets.recommended, { rules: ${rulesSource} });\n`,
         );
         const { stdout } = spawnSync(process.execPath, [oxlintBin, '-f', 'unix', 'src'], {
           cwd: dir,
