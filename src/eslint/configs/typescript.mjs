@@ -1,4 +1,8 @@
-import { EXTENSION_DTS } from '../extensions.mjs';
+import { defineConfig } from 'eslint/config';
+import * as tseslint from 'typescript-eslint';
+
+import { EXTENSION_DTS, EXTENSION_TS } from '../extensions.mjs';
+import piplupPlugin from '../piplup/index.mjs';
 
 /**
  * typescript-eslint rules, and the core rules they replace. Replaces the Airbnb TypeScript config.
@@ -51,12 +55,20 @@ export const rules = {
       allow: ['arrowFunctions', 'functions', 'methods'],
     },
   ],
+  // Part of the migration away from airbnb config. Turned off initially.
+  '@typescript-eslint/no-empty-object-type': 'off',
+  '@typescript-eslint/no-explicit-any': 'off',
   '@typescript-eslint/no-loop-func': 'error',
-  // Namespace rule
-  '@typescript-eslint/no-namespace': 'off',
+  // Disallow TypeScript namespaces: they can produce non-portable declaration types and break
+  // some bundlers, and tooling support for them is poor. Treat them as deprecated.
+  '@typescript-eslint/no-namespace': 'error',
   '@typescript-eslint/no-redeclare': 'off',
-  '@typescript-eslint/no-shadow': 'error',
+  // @TODO: Turn on once @typescript-eslint/no-shadow supports wrapped functions
+  //   See https://github.com/eslint/eslint/pull/20982 (once merged also needs port to `typescript-eslint`)
+  '@typescript-eslint/no-shadow': 'off',
   '@typescript-eslint/no-this-alias': 'off',
+  // Part of the migration away from airbnb config. Turned off initially.
+  '@typescript-eslint/no-unsafe-function-type': 'off',
   '@typescript-eslint/no-unused-expressions': [
     'error',
     { allowShortCircuit: false, allowTernary: false },
@@ -123,8 +135,23 @@ export const consistentTypeImportsRules = {
  */
 export const dtsConfig = {
   files: [`**/*${EXTENSION_DTS}`],
-  name: 'piplup-core-config/dts',
+  name: 'piplup/typescript/dts',
   rules: {
     '@typescript-eslint/consistent-type-imports': 'off',
   },
 };
+
+/**
+ * TypeScript: typescript-eslint's recommended rules and ours. Also applies to JavaScript files.
+ * @type {import('eslint').Linter.Config[]}
+ */
+export const config = defineConfig(
+  {
+    extends: [tseslint.configs.recommended],
+    files: [`**/*${EXTENSION_TS}`],
+    name: 'piplup/typescript',
+    plugins: { piplup: piplupPlugin },
+    rules: { ...rules, ...consistentTypeImportsRules },
+  },
+  dtsConfig,
+);

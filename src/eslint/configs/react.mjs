@@ -1,3 +1,9 @@
+import { defineConfig } from 'eslint/config';
+
+import { configs as reactHooksConfigs } from '../../lint/plugins/react-hooks.mjs';
+import { configs as reactConfigs } from '../../lint/plugins/react.mjs';
+import { EXTENSION_TS } from '../extensions.mjs';
+
 /**
  * eslint-plugin-react and eslint-plugin-react-hooks rules on top of their recommended configs.
  * @type {import('eslint').Linter.RulesRecord}
@@ -95,3 +101,14 @@ export const rules = {
   // stylistic opinion. For conditional assignment we want it outside, otherwise as static
   'react/static-property-placement': 'off',
 };
+
+/**
+ * React: eslint-plugin-react's and eslint-plugin-react-hooks' recommended rules, and ours.
+ * @type {import('eslint').Linter.Config[]}
+ */
+export const config = defineConfig({
+  extends: [reactConfigs.recommended, reactHooksConfigs.recommended],
+  files: [`**/*${EXTENSION_TS}`],
+  name: 'piplup/react',
+  rules,
+});

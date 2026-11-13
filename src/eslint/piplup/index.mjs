@@ -11,8 +11,13 @@ import noRestrictedResolvedImports from './rules/no-restricted-resolved-imports.
 import requireDevWrapper from './rules/require-dev-wrapper.mjs';
 import straightQuotes from './rules/straight-quotes.mjs';
 
-/** @type {import('eslint').ESLint.Plugin} */
+/**
+ * The piplup rules. `@piplup/code-infra/eslint` adds the configs to `configs`, so this module stays
+ * light for oxlint, which only loads the rules.
+ * @type {import('eslint').ESLint.Plugin & { configs: Record<string, import('eslint').Linter.Config[]> }}
+ */
 const piplupPlugin = {
+  configs: {},
   meta: {
     name: '@piplup/eslint-plugin-piplup',
     version: '2.0.0',

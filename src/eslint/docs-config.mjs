@@ -16,6 +16,7 @@ export function createDocsConfig({ rootDir = 'docs' } = {}) {
     nextConfigs.recommended,
     {
       files: [`**/*${EXTENSION_TS}`],
+      name: 'piplup/docs',
       rules: {
         'compat/compat': 'off',
         'jsx-a11y/anchor-is-valid': 'off',
@@ -38,9 +39,19 @@ export function createDocsConfig({ rootDir = 'docs' } = {}) {
           tsconfigRootDir: process.cwd(),
         },
       },
+      name: 'piplup/docs/type-aware',
       rules: {
         '@typescript-eslint/no-deprecated': 'error',
       },
     },
   );
 }
+
+/**
+ * The docs configs for `@piplup/code-infra/eslint/docs`. `docs` expects the Next.js app in `docs`;
+ * set `settings.next.rootDir` to change that.
+ */
+export const configs = {
+  /** @type {import('eslint').Linter.Config[]} */
+  docs: createDocsConfig(),
+};

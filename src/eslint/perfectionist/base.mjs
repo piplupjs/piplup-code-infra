@@ -17,7 +17,7 @@ export function createPerfectionistConfig() {
           },
         },
       },
-      name: 'perfectionist',
+      name: 'piplup/perfectionist',
       plugins: {
         perfectionist: perfectionistPlugin,
       },

@@ -12,7 +12,7 @@ export function createJsonConfig() {
       // package.json is linted by eslint-plugin-package-json, whose rules need the jsonc-eslint-parser AST.
       ignores: ['package-lock.json', '**/package.json'],
       language: 'json/json',
-      name: 'JSON files',
+      name: 'piplup/json',
       plugins: { json },
     },
 
@@ -26,7 +26,7 @@ export function createJsonConfig() {
         'renovate.json',
       ],
       language: 'json/jsonc',
-      name: 'JSONC files',
+      name: 'piplup/jsonc',
       plugins: { json },
     },
 
@@ -34,7 +34,7 @@ export function createJsonConfig() {
       extends: [json.configs.recommended],
       files: ['**/*.json5'],
       language: 'json/json5',
-      name: 'JSON5 files',
+      name: 'piplup/json5',
       plugins: { json },
     },
   ]);

@@ -1,3 +1,9 @@
+import eslintJs from '@eslint/js';
+import { defineConfig } from 'eslint/config';
+
+import { EXTENSION_TS } from '../extensions.mjs';
+import piplupPlugin from '../piplup/index.mjs';
+
 const restrictedMethods = ['setTimeout', 'setInterval', 'clearTimeout', 'clearInterval'];
 
 const restrictedSyntaxRules = restrictedMethods.map((method) => ({
@@ -155,6 +161,9 @@ export const rules = {
   // https://eslint.org/docs/rules/no-template-curly-in-string
   'no-template-curly-in-string': 'error',
   'no-throw-literal': 'error',
+  // Disallows unused vars without explicit init (use @typescript-eslint/no-unused-vars instead).
+  // New in ESLint 10, off for now.
+  'no-unassigned-vars': 'off',
   'no-underscore-dangle': [
     'error',
     {
@@ -167,6 +176,8 @@ export const rules = {
   'no-unneeded-ternary': ['error', { defaultAssignment: false }],
   // disallow useless string concatenation
   // https://eslint.org/docs/rules/no-useless-concat
+  // Disallows assignments that are never used. New in ESLint 10, off for now.
+  'no-useless-assignment': 'off',
   'no-useless-concat': 'error',
   // ES6+ Modern JavaScript
   'no-var': 'error',
@@ -183,6 +194,8 @@ export const rules = {
   // Destructuring harm grep potential.
   'prefer-destructuring': 'off',
   'prefer-template': 'error',
+  // Requires attaching caught errors as `cause` when re-throwing. New in ESLint 10, off for now.
+  'preserve-caught-error': 'off',
   radix: 'error',
   'spaced-comment': [
     'error',
@@ -194,3 +207,15 @@ export const rules = {
   ],
   'vars-on-top': 'error',
 };
+
+/**
+ * JavaScript: ESLint's recommended rules and ours.
+ * @type {import('eslint').Linter.Config[]}
+ */
+export const config = defineConfig({
+  extends: [eslintJs.configs.recommended],
+  files: [`**/*${EXTENSION_TS}`],
+  name: 'piplup/javascript',
+  plugins: { piplup: piplupPlugin },
+  rules,
+});

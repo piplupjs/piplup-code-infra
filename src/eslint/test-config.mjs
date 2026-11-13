@@ -57,7 +57,7 @@ export function createTestConfig() {
           ecmaVersion: 7,
         },
       },
-      name: 'Test files',
+      name: 'piplup/test',
       rules: {
         // Part of the migration away from airbnb config. Turned of initially.
         '@typescript-eslint/no-empty-function': 'off',

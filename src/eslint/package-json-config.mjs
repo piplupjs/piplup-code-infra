@@ -13,7 +13,7 @@ export function createPackageJsonConfig() {
       extends: [packageJson.configs.recommended],
       files: ['**/package.json'],
       ignores: ['**/__fixtures__/**'],
-      name: 'package.json files',
+      name: 'piplup/package-json',
       rules: {
         // npm only auto-includes "main" when it has no "./" prefix; removing it from "files" can drop the entry point.
         'package-json/no-redundant-files': 'off',

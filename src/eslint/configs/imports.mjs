@@ -1,3 +1,8 @@
+import { defineConfig } from 'eslint/config';
+
+import { configs as importConfigs } from '../../lint/plugins/import.mjs';
+import { EXTENSION_TS } from '../extensions.mjs';
+
 /**
  * eslint-plugin-import rules on top of its recommended, react and typescript configs.
  * @type {import('eslint').Linter.RulesRecord}
@@ -122,3 +127,32 @@ export const settings = {
     },
   },
 };
+
+/**
+ * Imports: eslint-plugin-import's recommended, react and typescript configs, and ours.
+ * @type {import('eslint').Linter.Config[]}
+ */
+export const config = defineConfig(
+  {
+    extends: [importConfigs.recommended, importConfigs.react, importConfigs.typescript],
+    files: [`**/*${EXTENSION_TS}`],
+    name: 'piplup/imports',
+    rules,
+    settings,
+  },
+  {
+    // Node.js needs the extension in ES module imports.
+    files: ['**/*.mjs'],
+    name: 'piplup/imports/esm',
+    rules: {
+      'import/extensions': [
+        'error',
+        'ignorePackages',
+        {
+          js: 'always',
+          mjs: 'always',
+        },
+      ],
+    },
+  },
+);

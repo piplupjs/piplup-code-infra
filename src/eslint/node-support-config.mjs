@@ -46,7 +46,7 @@ export function createNodeSupportConfig(baseDirectory) {
       basePath: baseDirectory,
       files: packageDirs.map((packageDir) => `${packageDir}/src/**/*${EXTENSION_TS}`),
       ignores: [`**/*${EXTENSION_TEST_FILE}`, `**/*.spec${EXTENSION_TS}`],
-      name: 'Node.js support of package sources',
+      name: 'piplup/node-support',
       plugins: { n: nPlugin },
       rules: {
         'n/no-unsupported-features/es-builtins': 'error',
