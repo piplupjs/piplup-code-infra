@@ -1,5 +1,6 @@
-import eslintPluginPerfectionist from 'eslint-plugin-perfectionist';
 import { defineConfig } from 'eslint/config';
+import eslintPluginPerfectionist from 'eslint-plugin-perfectionist';
+
 import { EXTENSION_JS, EXTENSION_TS } from '../extensions.mjs';
 
 /**

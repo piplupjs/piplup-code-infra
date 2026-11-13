@@ -5,6 +5,24 @@
  */
 
 /**
+ * Narrower print width for docs sources, so code blocks don't overflow on the docs site.
+ * @type {Override[]}
+ */
+export const docsOverrides = [
+  {
+    files: [
+      'docs/**/*.md',
+      'docs/src/pages/**/*.{js,tsx}',
+      'docs/src/app/**/*.{js,tsx}',
+      'docs/data/**/*.{js,tsx}',
+    ],
+    options: {
+      printWidth: 85,
+    },
+  },
+];
+
+/**
  * @type {Override}
  */
 const jsonOverride = {

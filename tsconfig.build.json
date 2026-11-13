@@ -8,5 +8,5 @@
     "noEmit": false
   },
   "include": ["src/**/*"],
-  "exclude": ["**/*.spec.*", "**/*.test.*", "**/setupVitest.ts"]
+  "exclude": ["**/*.spec.*", "**/*.test.*", "**/setupVitest.ts", "**/testUtils.mjs"]
 }

@@ -1,5 +1,6 @@
-import postcssStylesSyntax from 'postcss-styled-syntax';
 import { fileURLToPath } from 'node:url';
+
+import * as postcssStyledSyntax from 'postcss-styled-syntax';
 
 /** @type {import('stylelint').Config} */
 export default {
@@ -10,7 +11,6 @@ export default {
     // Too opinionated?
     'no-descending-specificity': null,
 
-    // Adopted from mui/material-ui repo
     'alpha-value-notation': null,
     'custom-property-pattern': null,
     'media-feature-range-notation': null,
@@ -42,7 +42,7 @@ export default {
   overrides: [
     {
       files: ['**/*.?(c|m)[jt]s?(x)'],
-      customSyntax: /** @type {any} */ (postcssStylesSyntax),
+      customSyntax: postcssStyledSyntax,
     },
   ],
 };

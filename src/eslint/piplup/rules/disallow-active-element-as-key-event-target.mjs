@@ -2,6 +2,12 @@
  * @type {import('eslint').Rule.RuleModule}
  */
 const rule = {
+  meta: {
+    messages: {
+      'keyboard-target':
+        "Don't use document.activeElement as a target for keyboard events. Prefer the actual element.",
+    },
+  },
   create(context) {
     /**
      * @param {import('estree').Node} node
@@ -53,12 +59,6 @@ const rule = {
         }
       },
     };
-  },
-  meta: {
-    messages: {
-      'keyboard-target':
-        "Don't use document.activeElement as a target for keyboard events. Prefer the actual element.",
-    },
   },
 };
 

@@ -10,13 +10,21 @@
   "sideEffects": false,
   "exports": {
     "./package.json": "./package.json",
-    "./prettier": {
-      "default": "./src/prettier.mjs",
-      "types": "./build/prettier.d.mts"
-    },
     "./eslint": {
-      "default": "./src/eslint/index.mjs",
-      "types": "./build/eslint/index.d.mts"
+      "types": "./build/eslint/index.d.mts",
+      "default": "./src/eslint/index.mjs"
+    },
+    "./eslint/docs": {
+      "types": "./build/eslint/docsConfig.d.mts",
+      "default": "./src/eslint/docsConfig.mjs"
+    },
+    "./prettier": {
+      "types": "./build/prettier.d.mts",
+      "default": "./src/prettier.mjs"
+    },
+    "./remark": {
+      "types": "./build/remark/config.d.mts",
+      "default": "./src/remark/config.mjs"
     },
     "./stylelint": {
       "types": "./build/stylelint/index.d.mts",
@@ -34,19 +42,22 @@
     "stylelint": "stylelint --report-invalid-scope-disables --report-needless-disables \"**/*.?(c|m)[jt]s?(x)\" \"**/*.css\" --ignore-path .lintignore",
     "typescript": "tsc -p tsconfig.json",
     "clean": "node scripts/clean.mjs",
-    "release": "node scripts/release.mjs"
+    "release": "node scripts/release.mjs",
+    "test": "vitest run"
   },
   "files": [
-    "bin",
     "build",
     "src",
     "README.md",
-    "LICENSE"
+    "LICENSE",
+    "!src/**/__fixtures__/**",
+    "!src/**/*.test.*",
+    "!src/setupVitest.ts",
+    "!src/utils/testUtils.mjs"
   ],
   "publishConfig": {
     "access": "public"
   },
-  "keywords": [],
   "author": "Sadik Malik",
   "license": "MIT",
   "packageManager": "pnpm@11.20.0",
@@ -54,28 +65,57 @@
     "@eslint/compat": "^2.1.1",
     "@eslint/js": "^10.0.1",
     "@eslint/json": "^2.1.1",
+    "@typescript-eslint/types": "^8.72.2",
+    "@typescript-eslint/utils": "^8.72.2",
+    "@vitest/eslint-plugin": "^1.6.28",
     "eslint-config-prettier": "^10.1.8",
     "eslint-import-resolver-typescript": "^4.4.4",
     "eslint-module-utils": "^2.14.0",
     "eslint-plugin-compat": "^7.0.2",
     "eslint-plugin-import": "^2.32.0",
     "eslint-plugin-jsx-a11y": "^6.10.2",
+    "eslint-plugin-mdx": "^3.9.5",
+    "eslint-plugin-n": "^18.5.0",
+    "eslint-plugin-package-json": "^1.14.0",
     "eslint-plugin-perfectionist": "^5.13.0",
     "eslint-plugin-react": "^7.37.5",
     "eslint-plugin-react-compiler": "19.1.0-rc.2",
     "eslint-plugin-react-hooks": "7.1.1",
+    "eslint-plugin-testing-library": "^7.16.2",
     "globals": "^17.14.0",
+    "globby": "^16.2.4",
     "minimatch": "^11.0.8",
     "postcss-styled-syntax": "^0.7.4",
+    "remark-frontmatter": "^5.0.0",
+    "remark-gfm": "^4.0.1",
+    "remark-lint": "^10.0.1",
+    "remark-lint-code-block-style": "^4.0.1",
+    "remark-lint-fenced-code-flag": "^4.2.0",
+    "remark-lint-heading-increment": "^4.0.1",
+    "remark-lint-heading-style": "^4.0.1",
+    "remark-lint-no-duplicate-headings": "^4.0.1",
+    "remark-lint-no-empty-url": "^4.0.1",
+    "remark-lint-no-heading-punctuation": "^4.0.1",
+    "remark-lint-no-multiple-toplevel-headings": "^4.0.1",
+    "remark-lint-no-undefined-references": "^5.0.2",
+    "remark-lint-no-unused-definitions": "^4.0.2",
+    "remark-lint-table-pipes": "^5.0.1",
     "stylelint-config-standard": "^41.0.0",
-    "typescript-eslint": "^8.72.2"
+    "typescript-eslint": "^8.72.2",
+    "unified": "^11.0.5",
+    "unified-lint-rule": "^3.0.1",
+    "unist-util-visit": "^5.2.0"
   },
   "peerDependencies": {
+    "@next/eslint-plugin-next": "*",
     "eslint": "^9.0.0 || ^10.0.0",
     "prettier": "^3.0.0",
     "stylelint": "^18.0.0"
   },
   "peerDependenciesMeta": {
+    "@next/eslint-plugin-next": {
+      "optional": true
+    },
     "eslint": {
       "optional": true
     },
@@ -89,9 +129,11 @@
   "devDependencies": {
     "@commitlint/cli": "^21.2.4",
     "@commitlint/config-conventional": "^21.2.4",
+    "@next/eslint-plugin-next": "^16.4.6",
     "@types/eslint-plugin-jsx-a11y": "^6.10.1",
     "@types/estree": "^1.0.8",
     "@types/estree-jsx": "^1.0.5",
+    "@types/mdast": "^4.0.4",
     "@types/node": "^26.6.6",
     "@types/semver": "^7.8.0",
     "@types/yargs": "^17.0.35",
@@ -102,6 +144,8 @@
     "husky": "^9.1.7",
     "prettier": "^3.10.1",
     "pretty-quick": "^4.2.2",
+    "remark": "^15.0.1",
+    "remark-mdx": "^3.1.1",
     "rimraf": "^6.1.2",
     "semver": "^7.8.6",
     "stylelint": "^18.0.0",

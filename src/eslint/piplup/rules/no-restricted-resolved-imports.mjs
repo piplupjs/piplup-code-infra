@@ -1,14 +1,15 @@
 import moduleVisitorModule from 'eslint-module-utils/moduleVisitor';
 import resolveModule from 'eslint-module-utils/resolve';
 import { minimatch } from 'minimatch';
-import * as path from 'node:path';
+
+import { toPosixPath } from '../../../utils/path.mjs';
 
 /**
- * @type {import('eslint-module-utils/moduleVisitor').default}
+ * @type {typeof import('eslint-module-utils/moduleVisitor').default}
  */
 const moduleVisitor = /** @type {any} */ (moduleVisitorModule).default || moduleVisitorModule;
 /**
- * @type {import('eslint-module-utils/resolve').default}
+ * @type {typeof import('eslint-module-utils/resolve').default}
  */
 const resolve = /** @type {any} */ (resolveModule).default || resolveModule;
 
@@ -23,6 +24,30 @@ const resolve = /** @type {any} */ (resolveModule).default || resolveModule;
  * Works with both ESM (import) and CommonJS (require) imports.
  */
 export default /** @type {import('eslint').Rule.RuleModule} */ ({
+  meta: {
+    docs: {
+      description: 'Disallow imports that resolve to certain patterns.',
+    },
+    messages: {
+      restrictedResolvedImport:
+        'Importing from "{{importSource}}" is restricted because it resolves to "{{resolvedPath}}", which matches the pattern "{{pattern}}".{{customMessage}}',
+    },
+    type: 'suggestion',
+    schema: [
+      {
+        type: 'array',
+        items: {
+          type: 'object',
+          properties: {
+            pattern: { type: 'string' },
+            message: { type: 'string' },
+          },
+          required: ['pattern'],
+          additionalProperties: false,
+        },
+      },
+    ],
+  },
   create(context) {
     const options = context.options[0] || [];
 
@@ -41,22 +66,22 @@ export default /** @type {import('eslint').Rule.RuleModule} */ ({
         }
 
         // Normalize the resolved path to use forward slashes
-        const normalizedPath = resolvedPath.split(path.sep).join('/');
+        const normalizedPath = toPosixPath(resolvedPath);
 
         // Check each pattern against the resolved path
         for (const option of options) {
-          const { message = '', pattern } = option;
+          const { pattern, message = '' } = option;
 
           if (minimatch(normalizedPath, pattern)) {
             context.report({
-              data: {
-                customMessage: message ? ` ${message}` : '',
-                importSource: source.value,
-                pattern,
-                resolvedPath: normalizedPath,
-              },
-              messageId: 'restrictedResolvedImport',
               node,
+              messageId: 'restrictedResolvedImport',
+              data: {
+                importSource: source.value,
+                resolvedPath: normalizedPath,
+                pattern,
+                customMessage: message ? ` ${message}` : '',
+              },
             });
 
             // Stop after first match
@@ -67,29 +92,5 @@ export default /** @type {import('eslint').Rule.RuleModule} */ ({
 
       { commonjs: true, esmodule: true },
     ); // This handles both require() and import statements
-  },
-  meta: {
-    docs: {
-      description: 'Disallow imports that resolve to certain patterns.',
-    },
-    messages: {
-      restrictedResolvedImport:
-        'Importing from "{{importSource}}" is restricted because it resolves to "{{resolvedPath}}", which matches the pattern "{{pattern}}".{{customMessage}}',
-    },
-    schema: [
-      {
-        items: {
-          additionalProperties: false,
-          properties: {
-            message: { type: 'string' },
-            pattern: { type: 'string' },
-          },
-          required: ['pattern'],
-          type: 'object',
-        },
-        type: 'array',
-      },
-    ],
-    type: 'suggestion',
   },
 });

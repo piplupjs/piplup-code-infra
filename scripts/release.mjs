@@ -1,6 +1,7 @@
 // @ts-check
 import { execSync } from 'node:child_process';
 import { existsSync, readFileSync } from 'node:fs';
+
 import enquirer from 'enquirer';
 import semver from 'semver';
 

@@ -1,19 +1,37 @@
+import addUndefToOptional from './rules/add-undef-to-optional.mjs';
+import consistentProductionGuard from './rules/consistent-production-guard.mjs';
 import disallowActiveElementAsKeyEventTarget from './rules/disallow-active-element-as-key-event-target.mjs';
 import disallowReactApiInServerComponents from './rules/disallow-react-api-in-server-components.mjs';
 import docgenIgnoreBeforeComment from './rules/docgen-ignore-before-comment.mjs';
+import flattenParentheses from './rules/flatten-parentheses.mjs';
+import noFloatingCleanup from './rules/no-floating-cleanup.mjs';
+import noGuardedThrow from './rules/no-guarded-throw.mjs';
+import noPresentationRole from './rules/no-presentation-role.mjs';
 import noRestrictedResolvedImports from './rules/no-restricted-resolved-imports.mjs';
+import requireDevWrapper from './rules/require-dev-wrapper.mjs';
 import straightQuotes from './rules/straight-quotes.mjs';
 
-export default /** @type {import('eslint').ESLint.Plugin} */ ({
+/** @type {import('eslint').ESLint.Plugin} */
+const piplupPlugin = {
   meta: {
     name: '@piplup/eslint-plugin-piplup',
-    version: '1.0.2',
+    version: '2.0.0',
   },
   rules: {
+    'consistent-production-guard': consistentProductionGuard,
     'disallow-active-element-as-key-event-target': disallowActiveElementAsKeyEventTarget,
-    'docgen-ignore-before-comment': docgenIgnoreBeforeComment,
-    'straight-quotes': straightQuotes,
     'disallow-react-api-in-server-components': disallowReactApiInServerComponents,
+    'docgen-ignore-before-comment': docgenIgnoreBeforeComment,
+    'no-guarded-throw': noGuardedThrow,
+    'no-presentation-role': noPresentationRole,
     'no-restricted-resolved-imports': noRestrictedResolvedImports,
+    'require-dev-wrapper': requireDevWrapper,
+    'straight-quotes': straightQuotes,
+    // Some discrepancies between TypeScript and ESLint types - casting to any
+    'add-undef-to-optional': /** @type {any} */ (addUndefToOptional),
+    'flatten-parentheses': /** @type {any} */ (flattenParentheses),
+    'no-floating-cleanup': /** @type {any} */ (noFloatingCleanup),
   },
-});
+};
+
+export default piplupPlugin;

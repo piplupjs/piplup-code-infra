@@ -1,5 +1,7 @@
 import { defineConfig } from 'eslint/config';
 
+import { EXTENSION_DTS } from '../extensions.mjs';
+
 const restrictedMethods = ['setTimeout', 'setInterval', 'clearTimeout', 'clearInterval'];
 
 const restrictedSyntaxRules = restrictedMethods.map((method) => ({
@@ -235,6 +237,14 @@ const criticalAirbnbRules = {
  * @type {import('eslint').Linter.Config['rules']}
  */
 const typescriptOverrides = {
+  '@typescript-eslint/ban-ts-comment': [
+    'error',
+    {
+      minimumDescriptionLength: 10,
+      'ts-expect-error': 'allow-with-description',
+      'ts-ignore': true,
+    },
+  ],
   '@typescript-eslint/default-param-last': 'error',
   // The `@typescript-eslint/naming-convention` rule allows `leadingUnderscore` and `trailingUnderscore` settings. However, the existing `no-underscore-dangle` rule already takes care of this.
   '@typescript-eslint/naming-convention': [
@@ -371,7 +381,8 @@ const airbnbJsxA11y = {
 
 /**
  * @param {Object} [options]
- * @param {boolean} [options.enableReactCompiler] - Whether the config is for spec files.
+ * @param {boolean} [options.enableReactCompiler] - Whether to enable React Compiler.
+ * @param {boolean} [options.consistentTypeImports] - Whether to enforce consistent type imports.
  * @returns {import('eslint').Linter.Config[]}
  */
 export function createCoreConfig(options = {}) {
@@ -435,8 +446,12 @@ export function createCoreConfig(options = {}) {
         // We are a library, we need to support it too
         'jsx-a11y/no-autofocus': 'off',
         'lines-around-directive': 'off',
+        'piplup/add-undef-to-optional': 'off',
+        'piplup/consistent-production-guard': 'error',
         'piplup/docgen-ignore-before-comment': 'error',
-
+        'piplup/flatten-parentheses': 'warn',
+        'piplup/no-guarded-throw': 'error',
+        'piplup/no-presentation-role': 'off',
         'piplup/straight-quotes': 'off',
         // Just as bad as "max components per file"
         'max-classes-per-file': 'off',
@@ -490,6 +505,13 @@ export function createCoreConfig(options = {}) {
           {
             message: 'Do not call `Error(...)` without `new`. Use `new Error(...)` instead.',
             selector: "CallExpression[callee.name='Error']",
+          },
+          {
+            // Inside HTML the <svg> element is already recognised by the browser, so the attribute
+            // is dead weight.
+            message:
+              'Remove xmlns from inline <svg>. The attribute is redundant in HTML and adds unnecessary bytes.',
+            selector: 'JSXOpeningElement[name.name="svg"] > JSXAttribute[name.name="xmlns"]',
           },
           ...restrictedSyntaxRules,
         ],
@@ -559,6 +581,17 @@ export function createCoreConfig(options = {}) {
         // stylistic opinion. For conditional assignment we want it outside, otherwise as static
         'react/static-property-placement': 'off',
         ...(options.enableReactCompiler ? { 'react-compiler/react-compiler': 'error' } : {}),
+        ...(options.consistentTypeImports
+          ? {
+              '@typescript-eslint/consistent-type-imports': [
+                'error',
+                {
+                  fixStyle: 'separate-type-imports',
+                },
+              ],
+              'import/consistent-type-specifier-style': ['error', 'prefer-top-level'],
+            }
+          : {}),
         '@typescript-eslint/return-await': 'off',
         // Prevent the use of `e` as a shorthand for `event`, `error`, etc.
         'id-denylist': ['error', 'e'],
@@ -581,6 +614,13 @@ export function createCoreConfig(options = {}) {
             project: ['tsconfig.node.json', 'apps/*/tsconfig.json', 'packages/*/tsconfig.json'],
           },
         },
+      },
+    },
+    {
+      name: 'piplup-core-config/dts',
+      files: [`**/*${EXTENSION_DTS}`],
+      rules: {
+        '@typescript-eslint/consistent-type-imports': 'off',
       },
     },
   ]);

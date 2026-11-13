@@ -4,25 +4,6 @@ const nonStraightQuotes = /[‘’“”]/gm;
  * @type {import('eslint').Rule.RuleModule}
  */
 const rule = {
-  create(context) {
-    return {
-      Program(node) {
-        const value = context.sourceCode.text;
-        let match;
-
-        while ((match = nonStraightQuotes.exec(value)) !== null) {
-          context.report({
-            loc: {
-              end: context.sourceCode.getLocFromIndex(match.index + 1),
-              start: context.sourceCode.getLocFromIndex(match.index),
-            },
-            messageId: 'wrongQuotes',
-            node,
-          });
-        }
-      },
-    };
-  },
   meta: {
     docs: {
       description:
@@ -32,8 +13,29 @@ const rule = {
       wrongQuotes:
         'Only allow straight quotes. Curly quotes can still be used but in specific context where relevant.',
     },
-    schema: [],
+    // fixable: 'code', TODO
     type: 'suggestion',
+    schema: [],
+  },
+  create(context) {
+    return {
+      Program(node) {
+        const value = context.sourceCode.text;
+        let match;
+
+        // eslint-disable-next-line no-cond-assign
+        while ((match = nonStraightQuotes.exec(value)) !== null) {
+          context.report({
+            node,
+            loc: {
+              start: context.sourceCode.getLocFromIndex(match.index),
+              end: context.sourceCode.getLocFromIndex(match.index + 1),
+            },
+            messageId: 'wrongQuotes',
+          });
+        }
+      },
+    };
   },
 };
 

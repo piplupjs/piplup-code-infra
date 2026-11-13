@@ -1,21 +1,21 @@
-import { BaseExpression, Expression } from 'estree';
+import type { BaseExpression, Expression } from 'estree';
 
 export * from 'estree';
 
 declare module 'estree' {
   interface ExpressionMap {
-    TSAsExpression: TSAsExpression;
     TSNonNullExpression: TSNonNullExpression;
+    TSAsExpression: TSAsExpression;
   }
 }
 
 export interface TSNonNullExpression extends BaseExpression {
-  expression: Expression;
   type: 'TSNonNullExpression';
+  expression: Expression;
 }
 
 export interface TSAsExpression extends BaseExpression {
-  expression: Expression;
   type: 'TSAsExpression';
+  expression: Expression;
   typeAnnotation: Expression;
 }
