@@ -14,6 +14,9 @@
     "**/__fixtures__/**",
     "**/setup-vitest.ts",
     "**/test-utils.mjs",
-    "**/oxlint-rule-tester.mjs"
+    "**/oxlint-rule-tester.mjs",
+    "**/oxlint-parity.mjs",
+    "**/build-presets.mjs",
+    "**/create-lint-tester.mjs"
   ]
 }

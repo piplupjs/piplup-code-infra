@@ -65,7 +65,8 @@
     "!src/utils/test-utils.mjs",
     "!src/utils/oxlint-rule-tester.mjs",
     "!src/utils/oxlint-parity.mjs",
-    "!src/oxlint/build-presets.mjs"
+    "!src/oxlint/build-presets.mjs",
+    "!src/remark/create-lint-tester.mjs"
   ],
   "publishConfig": {
     "access": "public"
