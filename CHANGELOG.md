@@ -11,6 +11,13 @@ The configs are now named, composable pieces instead of `create*` functions, and
 - `configs.recommended` lints more than 1.x did: `package.json` files, Markdown and MDX, and it sorts with perfectionist. It also turns on `piplup/consistent-production-guard` and `piplup/no-guarded-throw` as errors and `piplup/flatten-parentheses` as a warning. To leave a part out, list the configs you want instead.
 - The peer dependencies are now ESLint 9 or 10 and Stylelint 18. ESLint 9 was required before, and Stylelint 16.
 
+### Fixes
+
+- `piplup/docgen-ignore-before-comment` no longer slows linting down on long block comments. A 125 KB comment made only of `*` lines took 25 seconds. The rule now also works in files with Windows line endings.
+- remark's `first-block-heading` rule no longer slows down on front matter with many blank lines.
+- oxlint's `combine()` skips `__proto__` keys, which `JSON.parse` can produce, instead of replacing the prototype of the merged config.
+- `createRemarkConfig` rejects override rule names like `toString`, which it accepted as known rules before.
+
 ### Features
 
 - ESLint `configs`: `base`, `compat`, `imports`, `javascript`, `json`, `jsxA11y`, `markdown`, `packageJson`, `perfectionist`, `prettier`, `react`, `reactCompiler`, `spec`, `test` (Vitest and Testing Library), `typescript` and `recommended`. Each one works on its own, and every config object is named `piplup/…`.

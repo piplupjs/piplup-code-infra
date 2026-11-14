@@ -84,6 +84,17 @@ describe('remark-lint-piplup-first-block-heading', () => {
     expect(lint(`---\ntitle: Hello\n---\n\nSome content.\n`)).toEqual([]);
   });
 
+  it('accepts an indented or quoted title after blank lines', () => {
+    expect(lint(`---\n\n  "title": Hello\n---\n\nSome content.\n`)).toEqual([]);
+  });
+
+  it('checks front matter with many blank lines quickly', () => {
+    const start = performance.now();
+    expect(lint(`---\n${'\n'.repeat(200_000)}x: 1\n---\n\nSome content.\n`)).toHaveLength(1);
+    // A search that rescans the blank lines from each line takes minutes here.
+    expect(performance.now() - start).toBeLessThan(5000);
+  });
+
   it('still flags missing h1 when frontmatterTitle is disabled', () => {
     expect(
       lint(`---\ntitle: Hello\n---\n\nSome content.\n`, { frontMatterTitle: false }),

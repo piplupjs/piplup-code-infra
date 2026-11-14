@@ -221,7 +221,7 @@ function diff(base, next, off) {
     }
   }
   for (const key of Object.keys(base)) {
-    if (!(key in next)) {
+    if (!Object.hasOwn(next, key)) {
       out[key] = off;
     }
   }
@@ -570,7 +570,7 @@ export async function translateConfig(eslintConfig, { baseDirectory, scanFiles =
       // files does no harm to the others. The made-up files come first, so a key set for all
       // files wins.
       for (const [key, value] of Object.entries(config.settings ?? {})) {
-        if (!(key in settings)) {
+        if (!Object.hasOwn(settings, key)) {
           settings[key] = value;
         }
       }
@@ -638,9 +638,9 @@ export async function translateConfig(eslintConfig, { baseDirectory, scanFiles =
     const votes = new Map();
     let changed = false;
     for (const { current, wanted, weight } of states) {
-      const value = key in wanted ? wanted[key] : off;
+      const value = Object.hasOwn(wanted, key) ? wanted[key] : off;
       const vote = JSON.stringify(value);
-      changed ||= vote !== JSON.stringify(key in current ? current[key] : off);
+      changed ||= vote !== JSON.stringify(Object.hasOwn(current, key) ? current[key] : off);
       votes.set(vote, { count: (votes.get(vote)?.count ?? 0) + weight, value });
     }
     if (!changed) {

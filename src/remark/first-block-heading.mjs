@@ -2,7 +2,9 @@ import { lintRule } from 'unified-lint-rule';
 
 const FRONTMATTER_TYPES = new Set(['yaml', 'toml']);
 const INVISIBLE_TAGS = new Set(['style', 'script']);
-const DEFAULT_FRONT_MATTER_TITLE = /^\s*"?title"?\s*[:=]/m;
+// Spaces and tabs only: `\s` also matches line breaks, which makes the search slow on front matter
+// with many blank lines.
+const DEFAULT_FRONT_MATTER_TITLE = /^[ \t]*"?title"?[ \t]*[:=]/m;
 
 /** @param {import('mdast').RootContent} node */
 const isSkippable = (node) => {

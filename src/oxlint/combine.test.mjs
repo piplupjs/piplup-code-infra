@@ -10,6 +10,27 @@ import { oxlintFindings } from '../utils/oxlint-parity.mjs';
 import { combine } from './combine.mjs';
 
 describe('combine', () => {
+  it('skips __proto__ keys instead of replacing the prototype', () => {
+    const fromJson = JSON.parse(
+      '{"__proto__": {"rules": {"no-debugger": "off"}}, "settings": {"__proto__": {"x": 1}, "react": {"__proto__": {"x": 1}, "version": "19"}}}',
+    );
+    const combined = combine({ settings: { react: { version: '18' } } }, fromJson);
+    expect(Object.getPrototypeOf(combined)).toBe(Object.prototype);
+    expect(Object.getPrototypeOf(combined.settings)).toBe(Object.prototype);
+    expect(Object.getPrototypeOf(combined.settings?.react)).toBe(Object.prototype);
+    expect(combined).toEqual({ settings: { react: { version: '19' } } });
+    expect(/** @type {Record<string, unknown>} */ ({}).x).toBeUndefined();
+  });
+
+  it('only counts an override as setting a rule it sets itself', () => {
+    expect(
+      combine(
+        { overrides: [{ files: ['a'], rules: {} }] },
+        { rules: { toString: /** @type {'error'} */ ('error') } },
+      ),
+    ).toEqual({ overrides: [{ files: ['a'], rules: {} }], rules: { toString: 'error' } });
+  });
+
   it('merges configs, with later ones winning', () => {
     expect(
       combine(

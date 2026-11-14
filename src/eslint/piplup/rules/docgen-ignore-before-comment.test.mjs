@@ -43,8 +43,22 @@ ruleTester.run('ignore-before-comment', rule, {
         },
       ],
     },
+    {
+      code: '\r\n/**\r\n * Comment.\r\n * @ignore\r\n */\r\n',
+      errors: [
+        {
+          message: '@ignore should be at the beginning of a block comment.',
+        },
+      ],
+    },
   ],
   valid: [
+    // A long comment of `*` lines, which a backtracking regular expression took minutes on.
+    `/*${'*\n'.repeat(200_000)}*/`,
+    // The line before the comment lines must end in `*`.
+    '\n/*x\n *\n * @ignore\n */\n',
+    // `@ignore` must be the whole line.
+    '\n/**\n * Comment.\n * @ignore this\n */\n',
     '\n/**\n * @ignore\n */\n',
     '\n/**\n * @ignore\n * Comment.\n */\n',
     '\n/**\n * @ignore\n * Multi-line\n * comment.\n */\n',

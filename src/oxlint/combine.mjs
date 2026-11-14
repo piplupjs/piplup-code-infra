@@ -12,6 +12,8 @@ function isPlainObject(value) {
 
 /**
  * Merges objects key by key, with later values winning. Nested objects merge too; arrays don't.
+ * A `__proto__` key, which `JSON.parse` can give an object, is skipped: assigning it would replace
+ * the merged object's prototype.
  * @param {Record<string, unknown>} base
  * @param {Record<string, unknown>} next
  * @returns {Record<string, unknown>}
@@ -20,7 +22,10 @@ function deepMerge(base, next) {
   /** @type {Record<string, unknown>} */
   const out = { ...base };
   for (const [key, value] of Object.entries(next)) {
-    const current = out[key];
+    if (key === '__proto__') {
+      continue;
+    }
+    const current = Object.hasOwn(out, key) ? out[key] : undefined;
     out[key] = isPlainObject(current) && isPlainObject(value) ? deepMerge(current, value) : value;
   }
   return out;
@@ -56,7 +61,9 @@ export function combine(...configs) {
       const earlierOverrides = combined.overrides ?? [];
       const overridden = Object.fromEntries(
         Object.entries(rules).filter(([rule]) =>
-          earlierOverrides.some((override) => override.rules && rule in override.rules),
+          earlierOverrides.some(
+            (override) => override.rules && Object.hasOwn(override.rules, rule),
+          ),
         ),
       );
       combined.rules = { ...combined.rules, ...rules };

@@ -61,7 +61,7 @@ function changes(base, next, off) {
     }
   }
   for (const key of Object.keys(base)) {
-    if (!(key in next)) {
+    if (!Object.hasOwn(next, key)) {
       out[key] = off;
     }
   }

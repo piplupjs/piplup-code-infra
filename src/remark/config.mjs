@@ -174,7 +174,9 @@ function remarkPreserveSource() {
  */
 export function createRemarkConfig({ allowDefinitionComments = false, overrides = [] } = {}) {
   for (const override of overrides) {
-    const unknown = Object.keys(override.rules).filter((ruleName) => !(ruleName in RULES));
+    const unknown = Object.keys(override.rules).filter(
+      (ruleName) => !Object.hasOwn(RULES, ruleName),
+    );
     if (unknown.length > 0) {
       throw new Error(`Unknown remark-lint rule name(s): ${unknown.join(', ')}`);
     }
@@ -189,7 +191,7 @@ export function createRemarkConfig({ allowDefinitionComments = false, overrides 
         ? withDefinitionComments(rulePlugin)
         : rulePlugin;
     const overrideEntries = overrides
-      .filter((override) => name in override.rules)
+      .filter((override) => Object.hasOwn(override.rules, name))
       .map((override) => ({ files: override.files, settings: override.rules[name] }));
     if (overrideEntries.length === 0) {
       return [plugin, baseSettings];

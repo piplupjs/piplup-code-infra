@@ -20,6 +20,16 @@ async function lint(input, options = {}) {
   return remark().use(remarkMdx).use(createRemarkConfig(options)).process(input);
 }
 
+describe('createRemarkConfig overrides', () => {
+  it('rejects rule names that are only on Object.prototype', () => {
+    expect(() =>
+      createRemarkConfig({
+        overrides: [{ files: '*.md', rules: { toString: /** @type {false} */ (false) } }],
+      }),
+    ).toThrow('Unknown remark-lint rule name(s): toString');
+  });
+});
+
 describe('createRemarkConfig definition comments', () => {
   it('preserves MDX-compatible comments without suppressing unrelated diagnostics', async () => {
     const input = `# Example
