@@ -2,7 +2,7 @@ import { defineConfig } from 'eslint/config';
 
 import { configs as reactHooksConfigs } from '../../lint/plugins/react-hooks.mjs';
 import { configs as reactConfigs } from '../../lint/plugins/react.mjs';
-import { EXTENSION_TS } from '../extensions.mjs';
+import { EXTENSION_TS, EXTENSION_TS_ONLY } from '../extensions.mjs';
 
 import { languageOptions } from './shared.mjs';
 
@@ -108,10 +108,21 @@ export const rules = {
  * React: eslint-plugin-react's and eslint-plugin-react-hooks' recommended rules, and ours.
  * @type {import('eslint').Linter.Config[]}
  */
-export const config = defineConfig({
-  extends: [reactConfigs.recommended, reactHooksConfigs.recommended],
-  files: [`**/*${EXTENSION_TS}`],
-  languageOptions,
-  name: 'piplup/react',
-  rules,
-});
+export const config = defineConfig(
+  {
+    extends: [reactConfigs.recommended, reactHooksConfigs.recommended],
+    files: [`**/*${EXTENSION_TS}`],
+    languageOptions,
+    name: 'piplup/react',
+    rules,
+  },
+  {
+    files: [`**/*${EXTENSION_TS_ONLY}`],
+    name: 'piplup/react/typescript',
+    rules: {
+      // TypeScript checks the props. The rule can't follow imported types, so it reports props
+      // that come from them, such as `style` from `React.HTMLAttributes<HTMLDivElement>`.
+      'react/prop-types': 'off',
+    },
+  },
+);

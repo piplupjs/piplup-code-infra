@@ -37,7 +37,7 @@ export default defineConfig(
   {
     // Your own changes come last, so they win.
     rules: {
-      'react/prop-types': 'off',
+      'import/prefer-default-export': 'error',
     },
   },
 );
@@ -48,6 +48,8 @@ export default defineConfig(
 - `ignores(dir)` ignores the files in `.gitignore` and `.lintignore`. `nodeSupport(dir)` checks the sources of the `packages*/*` packages that declare `engines.node` for syntax and APIs those Node.js versions don't support.
 - The configs are also on the default export, the `piplup` plugin, for `extends: ['piplup/recommended']` in a config object that registers it as `plugins: { piplup }`.
 - To allow inline `type` imports, turn off `@typescript-eslint/consistent-type-imports` and `import/consistent-type-specifier-style`.
+- `configs.recommended` registers its plugins for every file, so a config object without `files`, like the last one above, can set their rules. The rules of the JavaScript plugins do nothing in JSON and Markdown. typescript-eslint's rules that need type information still need `files` for your code.
+- `react/prop-types` is off in TypeScript files, where TypeScript checks the props.
 
 For a Next.js docs app, add `configs.docs`, scoped to it. It expects the app in `docs`; for another directory, set `settings.next.rootDir` too:
 
@@ -96,7 +98,7 @@ export default { ...config, overrides: [...config.overrides, ...docsOverrides] }
 export default { extends: '@piplup/code-infra/stylelint' };
 ```
 
-`.remarkrc.mjs`, which the ESLint Markdown rules use too:
+`.remarkrc.mjs`, which the ESLint Markdown rules use too. Without one, ESLint still parses front matter and GitHub Flavored Markdown, but runs no Markdown rules:
 
 ```js
 import { createRemarkConfig } from '@piplup/code-infra/remark';

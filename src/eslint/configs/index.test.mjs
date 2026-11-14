@@ -24,6 +24,19 @@ const SAMPLES = {
     'import * as React from \'react\';\n\nexport function A() {\n  return <img src="a.png" />;\n}\n',
 };
 
+/**
+ * Lints `code` as `file` in `dir` with `config`.
+ * @param {string} dir
+ * @param {import('eslint').Linter.Config[]} config
+ * @param {string} file
+ * @param {string} code
+ */
+async function lint(dir, config, file, code) {
+  const eslint = new ESLint({ cwd: dir, overrideConfig: config, overrideConfigFile: true });
+  const [result] = await eslint.lintText(code, { filePath: path.join(dir, file) });
+  return result.messages;
+}
+
 describe('configs', () => {
   /** @type {string} */
   let dir;
@@ -141,5 +154,46 @@ describe('configs', () => {
       filePath: path.join(dir, 'src/a.ts'),
     });
     expect(result.messages.map(({ ruleId }) => ruleId)).toContain('perfectionist/sort-objects');
+  }, 60_000);
+  it.each(['data.json', 'package.json', 'README.md'])(
+    'lets a config object without `files` set rules of the plugins in `recommended`, in `%s`',
+    async (file) => {
+      const config = defineConfig(configs.recommended, {
+        rules: {
+          'import/prefer-default-export': 'error',
+          'jsx-a11y/aria-role': ['error', { ignoreNonDOM: true }],
+        },
+      });
+      const code = SAMPLES[/** @type {keyof typeof SAMPLES} */ (file)];
+      const messages = await lint(dir, config, file, code);
+      expect(messages.filter(({ fatal }) => fatal)).toEqual([]);
+    },
+    60_000,
+  );
+
+  it('runs the Next.js rules of `docs` on code, not on JSON', async () => {
+    const config = defineConfig(configs.recommended, docsConfigs.docs);
+    expect(await lint(dir, config, 'data.json', SAMPLES['data.json'])).toEqual([]);
+  }, 60_000);
+
+  it('leaves the props of TypeScript components to TypeScript', async () => {
+    const code = [
+      "import * as React from 'react';",
+      '',
+      'export function Root(props: React.HTMLAttributes<HTMLDivElement> & { columns?: number }) {',
+      '  const { columns, style, ...rest } = props;',
+      '  return <div {...rest} data-columns={columns} style={style} />;',
+      '}',
+      '',
+    ].join('\n');
+    const messages = await lint(dir, configs.recommended, 'src/root.tsx', code);
+    expect(messages.map(({ ruleId }) => ruleId)).not.toContain('react/prop-types');
+  }, 60_000);
+
+  it('parses front matter in MDX without a remark config of the project', async () => {
+    const code =
+      '---\ntitle: Form\ndescription: Wires up the <form> element.\n---\n\n# Form\n\nText.\n';
+    const messages = await lint(dir, configs.recommended, 'page.mdx', code);
+    expect(messages.map(({ message }) => message)).toEqual([]);
   }, 60_000);
 });
