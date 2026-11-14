@@ -193,13 +193,149 @@ export default defineConfig(
 
 ## Upgrading from 1.x
 
-| 1.x                                                                    | 2.0                                                                                                            |
-| ---------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
-| `createBaseConfig({ baseDirectory })` from `@piplup/code-infra/eslint` | `ignores(baseDirectory)` and `configs.recommended`, plus `nodeSupport(baseDirectory)` to check Node.js support |
-| `createBaseConfig({ baseDirectory, enableReactCompiler: true })`       | The same, with `configs.reactCompiler` after `configs.recommended`                                             |
-| `createBaseConfig({ overrides })` from `@piplup/code-infra/prettier`   | `config`, spread into your own with your overrides added to `config.overrides`                                 |
+2.0 replaces the `createBaseConfig` functions with named configs that you list yourself. The Stylelint config is used the same way as before. oxlint and oxfmt support is new and optional.
 
-`configs.recommended` also lints `package.json` files and Markdown, and sorts with perfectionist. To leave a part out, list the configs you want instead.
+| 1.x                                                                    | 2.0                                                                                           |
+| ---------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
+| `createBaseConfig({ baseDirectory })` from `@piplup/code-infra/eslint` | `ignores(baseDirectory)`, `configs.recommended` and, optionally, `nodeSupport(baseDirectory)` |
+| `enableReactCompiler: true`                                            | `configs.reactCompiler`, after `configs.recommended`                                          |
+| `createBaseConfig({ overrides })` from `@piplup/code-infra/prettier`   | `config`, spread into your own config                                                         |
+| Stylelint 16                                                           | Stylelint 18                                                                                  |
+
+### 1. Update the packages
+
+```sh
+pnpm add -D @piplup/code-infra@^2.0.0
+```
+
+If you use the Stylelint config, update Stylelint to 18 too. It needs Node.js 22.22.2, 24.15.0 or 26 or later:
+
+```sh
+pnpm add -D stylelint@^18.0.0
+```
+
+ESLint 9 and 10 both work, and any Prettier 3 release.
+
+### 2. Update `eslint.config.mjs`
+
+1.x:
+
+```js
+import { createBaseConfig } from '@piplup/code-infra/eslint';
+import { defineConfig } from 'eslint/config';
+
+export default defineConfig(
+  createBaseConfig({ baseDirectory: import.meta.dirname, enableReactCompiler: true }),
+  {
+    rules: {
+      'react/prop-types': 'off',
+    },
+  },
+);
+```
+
+2.0:
+
+```js
+import { configs, ignores, nodeSupport } from '@piplup/code-infra/eslint';
+import { defineConfig } from 'eslint/config';
+
+export default defineConfig(
+  ignores(import.meta.dirname),
+  configs.recommended,
+  // Only if you had enableReactCompiler: true.
+  configs.reactCompiler,
+  // Optional and new: checks Node.js support in packages that declare "engines.node".
+  nodeSupport(import.meta.dirname),
+  {
+    rules: {
+      'react/prop-types': 'off',
+    },
+  },
+);
+```
+
+- `ignores()` reads `.gitignore` and `.lintignore`, as `createBaseConfig` did. Pass the directory they're in: `createBaseConfig` used the current directory when you didn't pass `baseDirectory`, but `ignores()` has no default.
+- `compat/compat` finds the browsers to support in the nearest `.browserslistrc` or `package.json` `"browserslist"` above each file. 1.x only read `.browserslistrc` from `baseDirectory`.
+- Your own config objects still go last, so their rules win.
+
+### 3. Update `prettier.config.mjs`
+
+Without overrides, re-export the config:
+
+```js
+export { default } from '@piplup/code-infra/prettier';
+```
+
+With overrides, 1.x:
+
+```js
+import { createBaseConfig } from '@piplup/code-infra/prettier';
+
+export default createBaseConfig({
+  overrides: [{ files: ['*.md'], options: { proseWrap: 'always' } }],
+});
+```
+
+2.0:
+
+```js
+import { config } from '@piplup/code-infra/prettier';
+
+export default {
+  ...config,
+  overrides: [...config.overrides, { files: ['*.md'], options: { proseWrap: 'always' } }],
+};
+```
+
+Keep `...config.overrides`: it holds the JSON override that turns off trailing commas.
+
+### 4. Fix the new reports
+
+`configs.recommended` checks more than `createBaseConfig` did, so expect new reports on the first run:
+
+- **Sorting.** perfectionist sorts object keys, imports, JSX props and more. `eslint --fix` fixes these.
+- **`package.json` files**, through `configs.packageJson`.
+- **Markdown and MDX**, through `configs.markdown`. Add a `.remarkrc.mjs` (see [Stylelint and remark](#stylelint-and-remark)) for the Markdown rules.
+- **New piplup rules:** `piplup/consistent-production-guard` and `piplup/no-guarded-throw` report errors, and `piplup/flatten-parentheses` warns.
+
+Run the fixable ones first, then look at what's left:
+
+```sh
+pnpm eslint . --fix
+```
+
+To adopt these one at a time, list the configs you want instead of `configs.recommended`. This is the order `recommended` uses, without `packageJson`, `markdown` and `perfectionist`, so it's closest to 1.x:
+
+```js
+import { configs, ignores } from '@piplup/code-infra/eslint';
+import { defineConfig } from 'eslint/config';
+
+export default defineConfig(
+  ignores(import.meta.dirname),
+  configs.base,
+  configs.json,
+  configs.prettier,
+  configs.javascript,
+  configs.imports,
+  configs.jsxA11y,
+  configs.react,
+  configs.typescript,
+  configs.compat,
+  {
+    rules: {
+      'piplup/consistent-production-guard': 'off',
+      'piplup/flatten-parentheses': 'off',
+      'piplup/no-guarded-throw': 'off',
+    },
+  },
+);
+```
+
+### 5. Optional: lint tests and try oxlint
+
+- For Vitest and Testing Library rules, add `configs.test` scoped to your test files, as in the [ESLint](#eslint) example.
+- To run the same rules faster, see [oxlint and oxfmt](#oxlint-and-oxfmt).
 
 ## Maintaining
 
