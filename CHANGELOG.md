@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.0.1
+
+### Fixes
+
+- The oxlint presets and `createOxlintConfig` ignore `node_modules` and `.git`, as ESLint always does. oxlint only skipped `node_modules` when `.gitignore` listed it, so in a project without that entry it linted every dependency, which took minutes with the presets' plugins.
+
 ## 2.0.0
 
 The configs are now named, composable pieces instead of `create*` functions, and the package adds oxlint and oxfmt support. See [Upgrading from 1.x](./README.md#upgrading-from-1x) in the README.

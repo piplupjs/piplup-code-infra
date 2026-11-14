@@ -442,8 +442,10 @@ export async function translateConfig(eslintConfig, { baseDirectory, scanFiles =
   // are targets too, since they can undo what an earlier, narrower object set.
   /** @type {(Required<Target> & { rules: Set<string>, globals: Set<string> })[]} */
   const targets = [];
+  // ESLint always ignores these, without a config saying so. oxlint doesn't skip node_modules
+  // unless .gitignore lists it.
   /** @type {string[]} */
-  const ignorePatterns = [];
+  const ignorePatterns = ['**/node_modules/**', '.git/**'];
   for (const config of flatConfig) {
     const keys = Object.keys(config).filter((key) => key !== 'name');
     if (keys.length === 1 && keys[0] === 'ignores') {

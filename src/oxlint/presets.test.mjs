@@ -99,6 +99,33 @@ describe('oxlint presets', () => {
       await fs.rm(dir, { force: true, recursive: true });
     }
   }, 120_000);
+
+  it('skip node_modules, like ESLint, in a project without a .gitignore', async () => {
+    const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'oxlint-presets-ignores-'));
+    try {
+      await fs.writeFile(path.join(dir, 'package.json'), '{ "name": "presets", "type": "module" }');
+      const presetsUrl = pathToFileURL(path.join(import.meta.dirname, 'index.mjs')).href;
+      await fs.writeFile(
+        path.join(dir, 'oxlint.config.ts'),
+        `import { presets } from '${presetsUrl}';\n\nexport default presets.recommended;\n`,
+      );
+      await fs.mkdir(path.join(dir, 'node_modules/dependency'), { recursive: true });
+      await fs.writeFile(path.join(dir, 'node_modules/dependency/index.js'), 'debugger;\n');
+      await fs.writeFile(path.join(dir, 'a.js'), 'debugger;\n');
+      const result = spawnSync(process.execPath, [oxlintBin, '-f', 'unix'], {
+        cwd: dir,
+        encoding: 'utf8',
+      });
+      const files = result.stdout
+        .split('\n')
+        .map((line) => line.match(/^(.+?):\d+:\d+: /)?.[1].replaceAll('\\', '/'))
+        .filter(Boolean);
+      expect(files).toContain('a.js');
+      expect(files.filter((file) => file?.includes('node_modules'))).toEqual([]);
+    } finally {
+      await fs.rm(dir, { force: true, recursive: true });
+    }
+  }, 120_000);
 });
 
 /** @typedef {keyof typeof presets} PresetName */

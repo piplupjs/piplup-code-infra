@@ -143,7 +143,7 @@ export default await createOxlintConfig(eslintConfig, { baseDirectory: import.me
 
 `createOxlintConfig` takes an ESLint config, anything `defineConfig` takes, and builds an oxlint config with the same rules, options and globals for each file. It loads ESLint and its plugins, so it starts slower than the presets.
 
-- Each ESLint config object for some of the files becomes an oxlint override, from its `files` and `ignores`. The global `ignores` become `ignorePatterns`. oxlint reads those patterns relative to the config file, so keep `oxlint.config.ts` in `baseDirectory`, next to `eslint.config.mjs`.
+- Each ESLint config object for some of the files becomes an oxlint override, from its `files` and `ignores`. The global `ignores` become `ignorePatterns`, along with `node_modules` and `.git`, which ESLint always ignores. oxlint reads those patterns relative to the config file, so keep `oxlint.config.ts` in `baseDirectory`, next to `eslint.config.mjs`.
 - It asks ESLint about the repository's files, and about made-up files for each override. A file the overrides can't describe gets an override that lists it, for example when a config's `files` is a function. Files added later aren't in that list, so build the config again.
 - Rules from a plugin it has no route for make it throw. Turn those rules off for oxlint, or keep linting those files with ESLint.
 

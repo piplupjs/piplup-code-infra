@@ -205,11 +205,11 @@ describe('createOxlintConfig', () => {
     }
   }, 60_000);
 
-  it('takes the ignore patterns from the ESLint config', async () => {
+  it("takes the ignore patterns from the ESLint config, after ESLint's own", async () => {
     const config = await createOxlintConfig([{ ignores: ['generated/**'] }, configs.recommended], {
       baseDirectory: emptyDir,
     });
-    expect(config.ignorePatterns).toEqual(['generated/**']);
+    expect(config.ignorePatterns).toEqual(['**/node_modules/**', '.git/**', 'generated/**']);
   }, 60_000);
 
   it('is accepted by oxlint', async () => {

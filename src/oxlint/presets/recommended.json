@@ -1,6 +1,6 @@
 {
   "categories": { "correctness": "off" },
-  "ignorePatterns": [],
+  "ignorePatterns": ["**/node_modules/**", ".git/**"],
   "jsPlugins": [
     { "name": "eslint-js", "specifier": "./plugins/eslint-core.mjs" },
     { "name": "typescript-js", "specifier": "./plugins/typescript-eslint.mjs" },
