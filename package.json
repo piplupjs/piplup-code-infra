@@ -51,7 +51,7 @@
     "clean": "node scripts/clean.mjs",
     "release": "node scripts/release.mjs",
     "test": "vitest run",
-    "oxlint": "oxlint",
+    "oxlint": "oxlint --deny-warnings",
     "oxlint:update-rules": "node scripts/update-oxlint-rules.mjs",
     "oxlint:presets": "node scripts/build-oxlint-presets.mjs"
   },

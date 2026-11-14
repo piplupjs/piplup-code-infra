@@ -1,6 +1,7 @@
 {
   "{scripts,src}/**/*.{js,mjs,jsx,ts,tsx,mts}": [
     "pnpm eslint --fix --no-warn-ignored",
+    "pnpm oxlint --fix --no-error-on-unmatched-pattern",
     "pnpm prettier:all"
   ]
 }
