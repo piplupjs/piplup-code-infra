@@ -1,6 +1,5 @@
 import { defineConfig } from 'eslint/config';
 import prettierConfig from 'eslint-config-prettier/flat';
-import * as mdx from 'eslint-plugin-mdx';
 import globals from 'globals';
 
 import { configs as compatConfigs } from '../../lint/plugins/compat.mjs';
@@ -12,6 +11,7 @@ import { config as imports } from './imports.mjs';
 import { config as javascript } from './javascript.mjs';
 import { config as json } from './json.mjs';
 import { config as jsxA11y } from './jsx-a11y.mjs';
+import { config as markdown } from './markdown.mjs';
 import { config as packageJson } from './package-json.mjs';
 import { config as perfectionist } from './perfectionist.mjs';
 import { config as reactCompiler } from './react-compiler.mjs';
@@ -65,28 +65,49 @@ const compat = defineConfig({
 });
 
 /**
- * Markdown and MDX, through eslint-plugin-mdx. Severities for the Markdown checks live in the
- * project's `.remarkrc` (see `@piplup/code-infra/remark`), not here.
- * @type {import('eslint').Linter.Config[]}
- */
-const markdown = defineConfig(
-  {
-    ...mdx.flat,
-    name: 'piplup/markdown',
-    rules: {
-      ...mdx.flat.rules,
-      'mdx/remark': 'error',
-    },
-  },
-  { ...mdx.flatCodeBlocks, name: 'piplup/markdown/code-blocks' },
-);
-
-/**
  * Turns off the rules that conflict with Prettier. Comes before the code configs in
  * `recommended`, so ours win where we want a rule anyway, such as `curly`.
  * @type {import('eslint').Linter.Config[]}
  */
 const prettier = defineConfig({ extends: [prettierConfig], name: 'piplup/prettier' });
+
+/**
+ * One config object that registers, for every file, the plugins the given configs register for
+ * some files. A config object of the project's own without `files` can then set those plugins'
+ * rules, which ESLint otherwise rejects for files no config registered the plugin for, such as
+ * JSON. The wrapped plugins' rules do nothing outside JavaScript.
+ * @param {string} name
+ * @param {import('eslint').Linter.Config[]} list
+ * @returns {import('eslint').Linter.Config}
+ */
+function allPlugins(name, list) {
+  /** @type {Record<string, import('eslint').ESLint.Plugin>} */
+  const plugins = {};
+  for (const config of list) {
+    for (const [key, plugin] of Object.entries(config.plugins ?? {})) {
+      if (plugins[key] && plugins[key] !== plugin) {
+        throw new Error(`Two configs register different "${key}" plugins.`);
+      }
+      plugins[key] = plugin;
+    }
+  }
+  return { name, plugins };
+}
+
+const recommendedConfigs = defineConfig(
+  base,
+  json,
+  packageJson,
+  prettier,
+  markdown,
+  javascript,
+  imports,
+  jsxA11y,
+  react,
+  typescript,
+  compat,
+  perfectionist,
+);
 
 /**
  * The named configs. Each sets its own `files`, so it can be used on its own, and registers the
@@ -107,22 +128,13 @@ export const configs = {
   reactCompiler,
   /**
    * Everything except `reactCompiler`, in an order where each config's rules win over the
-   * recommended configs of the configs before it.
+   * recommended configs of the configs before it. Its plugins are registered for every file, so
+   * the project's own rules can set them without `files`.
    * @type {import('eslint').Linter.Config[]}
    */
   recommended: defineConfig(
-    base,
-    json,
-    packageJson,
-    prettier,
-    markdown,
-    javascript,
-    imports,
-    jsxA11y,
-    react,
-    typescript,
-    compat,
-    perfectionist,
+    allPlugins('piplup/recommended/plugins', recommendedConfigs),
+    recommendedConfigs,
   ),
   spec,
   test,

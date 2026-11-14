@@ -1313,6 +1313,10 @@
       "rules": { "import/extensions": [2, "ignorePackages", { "js": "always", "mjs": "always" }] }
     },
     {
+      "files": ["**/*.ts", "**/*.tsx", "**/*.cts", "**/*.mts"],
+      "rules": { "react-js/prop-types": "off" }
+    },
+    {
       "files": ["**/*.ts", "**/*.tsx", "**/*.mts", "**/*.cts"],
       "rules": {
         "constructor-super": "off",

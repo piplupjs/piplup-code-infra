@@ -1,5 +1,14 @@
 # Changelog
 
+## Unreleased
+
+### Fixes
+
+- `configs.docs` no longer crashes ESLint on JSON files. The JavaScript rules of the plugins code-infra wraps, such as the Next.js ones, now do nothing in files of other languages, where `@eslint/compat` failed to create them.
+- A config object without `files` can set the rules of the plugins in `configs.recommended`, as the README's example does. ESLint reported `Could not find plugin` for files no config registered the plugin for, such as JSON, so `recommended` now registers its plugins for every file.
+- `react/prop-types` is off in TypeScript files. It couldn't follow imported types, so it reported props such as `style` from `React.HTMLAttributes`, which TypeScript already checks.
+- In a project without a remark config, the Markdown config parses front matter and GitHub Flavored Markdown. It read front matter as Markdown before, so a `description` with a tag like `<form>` failed to parse.
+
 ## 2.0.2
 
 ### Fixes
