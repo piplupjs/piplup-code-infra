@@ -147,7 +147,8 @@ export const config = defineConfig(
   },
   {
     // Node.js needs the extension in ES module imports.
-    files: ['**/*.mjs'],
+    // oxlint and oxfmt load their config files with Node.js too, so those need extensions as well.
+    files: ['**/*.mjs', '**/oxlint.config.ts', '**/oxfmt.config.ts'],
     name: 'piplup/imports/esm',
     rules: {
       'import/extensions': [

@@ -81,6 +81,33 @@ describe('configs', () => {
     expect(names.has('piplup/typescript')).toBe(true);
   });
 
+  it.each(['oxlint.config.ts', 'oxfmt.config.ts', 'src/a.mjs'])(
+    'requires extensions in `%s`, which Node.js loads',
+    async (file) => {
+      const eslint = new ESLint({
+        cwd: dir,
+        overrideConfig: configs.recommended,
+        overrideConfigFile: true,
+      });
+      const config = await eslint.calculateConfigForFile(path.join(dir, file));
+      expect(config.rules['import/extensions']).toEqual([
+        2,
+        'ignorePackages',
+        { js: 'always', mjs: 'always' },
+      ]);
+    },
+  );
+
+  it('leaves out extensions in other TypeScript files', async () => {
+    const eslint = new ESLint({
+      cwd: dir,
+      overrideConfig: configs.recommended,
+      overrideConfigFile: true,
+    });
+    const config = await eslint.calculateConfigForFile(path.join(dir, 'vite.config.ts'));
+    expect(config.rules['import/extensions'][2]).toMatchObject({ mjs: 'never', ts: 'never' });
+  });
+
   it('exposes the configs on the plugin, which can be registered next to them', async () => {
     expect(plugin.configs.recommended).toBe(configs.recommended);
     const eslint = new ESLint({

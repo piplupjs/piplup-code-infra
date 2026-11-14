@@ -1309,7 +1309,7 @@
       }
     },
     {
-      "files": ["**/*.mjs"],
+      "files": ["**/*.mjs", "**/oxlint.config.ts", "**/oxfmt.config.ts"],
       "rules": { "import/extensions": [2, "ignorePackages", { "js": "always", "mjs": "always" }] }
     },
     {

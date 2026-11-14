@@ -22,6 +22,10 @@ export default defineConfig(
           project: ['tsconfig.json'],
         },
       },
+      // React isn't installed here, so it can't be detected. The rule tests use current React.
+      react: {
+        version: '19.2',
+      },
     },
   },
   {

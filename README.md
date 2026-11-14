@@ -339,4 +339,6 @@ export default defineConfig(
 
 ## Maintaining
 
+This repository lints itself with both tools: `pnpm eslint`, and `pnpm oxlint` with an `oxlint.config.ts` built from `eslint.config.mjs`.
+
 After upgrading oxlint, run `pnpm oxlint:update-rules` and then `pnpm oxlint:presets`, so the configs know which rules oxlint implements natively. After changing an ESLint config, run `pnpm oxlint:presets`; a test fails while the presets are out of date.

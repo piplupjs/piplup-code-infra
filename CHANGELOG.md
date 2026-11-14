@@ -16,6 +16,7 @@ The configs are now named, composable pieces instead of `create*` functions, and
 - `piplup/docgen-ignore-before-comment` no longer slows linting down on long block comments. A 125 KB comment made only of `*` lines took 25 seconds. The rule now also works in files with Windows line endings.
 - remark's `first-block-heading` rule no longer slows down on front matter with many blank lines.
 - oxlint's `combine()` skips `__proto__` keys, which `JSON.parse` can produce, instead of replacing the prototype of the merged config.
+- `import/extensions` requires file extensions in `oxlint.config.ts` and `oxfmt.config.ts`, which Node.js loads, instead of reporting them, so the README's `oxlint.config.ts` example passes linting.
 - `createRemarkConfig` rejects override rule names like `toString`, which it accepted as known rules before.
 
 ### Features
