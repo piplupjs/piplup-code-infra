@@ -3,6 +3,7 @@ import { fileURLToPath } from 'node:url';
 
 import { configs as docsConfigs } from '../eslint/docs.mjs';
 import { EXTENSION_TEST_FILE, EXTENSION_TS } from '../eslint/extensions.mjs';
+import { TYPESCRIPT_RESOLVER } from '../eslint/import-resolver.mjs';
 import { configs } from '../eslint/index.mjs';
 
 import { translateConfig } from './create-config.mjs';
@@ -148,6 +149,33 @@ function relativeSpecifiers(preset) {
  * project; `loadPreset` adds that.
  * @returns {Promise<Record<string, Preset>>}
  */
+/**
+ * Names the TypeScript import resolver instead of giving the path it has on this machine.
+ * `presets.mjs` puts back the path it has where the presets are used.
+ * @param {Preset} preset
+ * @returns {Preset}
+ */
+function resolverByName(preset) {
+  const resolvers = /** @type {Record<string, unknown> | undefined} */ (
+    preset.settings?.['import/resolver']
+  );
+  if (!resolvers || !Object.hasOwn(resolvers, TYPESCRIPT_RESOLVER)) {
+    return preset;
+  }
+  return {
+    ...preset,
+    settings: {
+      ...preset.settings,
+      'import/resolver': Object.fromEntries(
+        Object.entries(resolvers).map(([name, options]) => [
+          name === TYPESCRIPT_RESOLVER ? 'typescript' : name,
+          options,
+        ]),
+      ),
+    },
+  };
+}
+
 export async function buildPresets() {
   const baseDirectory = path.resolve(OXLINT_DIRECTORY, '../..');
   /** @param {Parameters<typeof translateConfig>[0][]} extra */
@@ -166,7 +194,7 @@ export async function buildPresets() {
   return Object.fromEntries(
     Object.entries(presets).map(([name, preset]) => [
       name,
-      relativeSpecifiers(globalsInOverride(preset)),
+      resolverByName(relativeSpecifiers(globalsInOverride(preset))),
     ]),
   );
 }

@@ -129,7 +129,8 @@
     "unified": "^11.0.5",
     "unified-lint-rule": "^3.0.1",
     "unist-util-visit": "^5.2.0",
-    "yaml": "^2.9.1"
+    "yaml": "^2.9.1",
+    "zod-validation-error": "^4.0.0"
   },
   "peerDependencies": {
     "@next/eslint-plugin-next": "*",

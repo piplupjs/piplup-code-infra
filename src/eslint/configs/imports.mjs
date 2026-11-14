@@ -2,6 +2,7 @@ import { defineConfig } from 'eslint/config';
 
 import { configs as importConfigs } from '../../lint/plugins/import.mjs';
 import { EXTENSION_TS } from '../extensions.mjs';
+import { TYPESCRIPT_RESOLVER } from '../import-resolver.mjs';
 
 import { languageOptions } from './shared.mjs';
 
@@ -126,7 +127,7 @@ export const settings = {
     node: {
       extensions: ['.mjs', '.js', '.json'],
     },
-    typescript: {
+    [TYPESCRIPT_RESOLVER]: {
       project: ['tsconfig.node.json', 'apps/*/tsconfig.json', 'packages/*/tsconfig.json'],
     },
   },

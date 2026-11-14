@@ -1,11 +1,30 @@
 import * as fs from 'node:fs';
 import { fileURLToPath } from 'node:url';
 
+import { TYPESCRIPT_RESOLVER } from '../eslint/import-resolver.mjs';
+
 import { finalizeConfig } from './create-config.mjs';
 
 /**
  * @typedef {Partial<import('./create-config.mjs').OxlintConfig>} Preset
  */
+
+/**
+ * Gives the TypeScript import resolver by its path, as the ESLint config does, so
+ * eslint-plugin-import finds it wherever it's installed.
+ * @param {Record<string, unknown>} settings
+ * @returns {Record<string, unknown>}
+ */
+function resolverByPath(settings) {
+  const resolvers = /** @type {Record<string, unknown> | undefined} */ (
+    settings['import/resolver']
+  );
+  if (!resolvers || !Object.hasOwn(resolvers, 'typescript')) {
+    return settings;
+  }
+  const { typescript, ...others } = resolvers;
+  return { ...settings, 'import/resolver': { ...others, [TYPESCRIPT_RESOLVER]: typescript } };
+}
 
 /**
  * Reads a preset from ./presets, written by `pnpm oxlint:presets`, and adds what depends on the
@@ -21,6 +40,7 @@ function loadPreset(file) {
   return finalizeConfig(
     {
       ...preset,
+      ...(preset.settings ? { settings: resolverByPath(preset.settings) } : {}),
       ...(preset.jsPlugins
         ? {
             jsPlugins: preset.jsPlugins.map(({ name, specifier }) => ({

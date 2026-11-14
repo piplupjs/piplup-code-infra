@@ -1,5 +1,12 @@
 # Changelog
 
+## 2.0.2
+
+### Fixes
+
+- With npm, the React configs and presets no longer fail to load `eslint-plugin-react-hooks`. npm gave it the `zod-validation-error` 3.5.4 that `eslint-plugin-react-compiler` needs, which no longer has the `zod-validation-error/v4` that `react-hooks` loads, so the package now depends on `zod-validation-error` 4.
+- With npm, the import rules no longer report `Resolve error: typescript with invalid interface loaded as resolver` on every file. eslint-plugin-import looks for `eslint-import-resolver-typescript` next to itself, where npm doesn't always put it, so `import/resolver` now gives the resolver by its path.
+
 ## 2.0.1
 
 ### Fixes

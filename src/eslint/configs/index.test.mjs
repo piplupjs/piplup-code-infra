@@ -7,6 +7,7 @@ import { defineConfig } from 'eslint/config';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 import { configs as docsConfigs } from '../docs.mjs';
+import { TYPESCRIPT_RESOLVER } from '../import-resolver.mjs';
 import plugin from '../index.mjs';
 
 import { configs } from './index.mjs';
@@ -97,6 +98,23 @@ describe('configs', () => {
       ]);
     },
   );
+
+  it('loads the TypeScript import resolver by path, which npm may not put next to the plugin', async () => {
+    const eslint = new ESLint({
+      cwd: dir,
+      overrideConfig: configs.recommended,
+      overrideConfigFile: true,
+    });
+    const config = await eslint.calculateConfigForFile(path.join(dir, 'src/a.ts'));
+    const [, typescript] = Object.keys(config.settings['import/resolver']);
+    expect(typescript).toBe(TYPESCRIPT_RESOLVER);
+    const [result] = await eslint.lintText(SAMPLES['src/a.mjs'], {
+      filePath: path.join(dir, 'src/a.mjs'),
+    });
+    expect(result.messages.map(({ message }) => message)).not.toContainEqual(
+      expect.stringMatching(/Resolve error/),
+    );
+  }, 60_000);
 
   it('leaves out extensions in other TypeScript files', async () => {
     const eslint = new ESLint({

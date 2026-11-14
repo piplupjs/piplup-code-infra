@@ -9,6 +9,7 @@ import { ESLint } from 'eslint';
 import { defineConfig } from 'eslint/config';
 import { describe, expect, it } from 'vitest';
 
+import { TYPESCRIPT_RESOLVER } from '../eslint/import-resolver.mjs';
 import { configs } from '../eslint/index.mjs';
 import {
   eslintFindings,
@@ -48,6 +49,17 @@ describe('oxlint presets', () => {
     }
     expect(/** @type {any} */ (presets.recommended.settings)?.react?.version).not.toBe('detect');
     expect(presets.test.settings?.react).toBeUndefined();
+  });
+
+  it('give the TypeScript import resolver by path, which npm may not put next to the plugin', async () => {
+    const stored = JSON.parse(
+      await fs.readFile(new URL('./presets/recommended.json', import.meta.url), 'utf8'),
+    );
+    expect(Object.keys(stored.settings['import/resolver'])).toEqual(['node', 'typescript']);
+    const resolvers = /** @type {any} */ (presets.recommended.settings)['import/resolver'];
+    expect(Object.keys(resolvers)).toEqual(['node', TYPESCRIPT_RESOLVER]);
+    expect(resolvers[TYPESCRIPT_RESOLVER]).toEqual(stored.settings['import/resolver'].typescript);
+    expect(path.isAbsolute(TYPESCRIPT_RESOLVER)).toBe(true);
   });
 
   it('work in oxlint through `extends`, under the project’s own rules', async () => {
