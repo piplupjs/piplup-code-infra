@@ -71,19 +71,23 @@ describe('createOxfmtConfig', () => {
     expect(oxfmtConfig).not.toHaveProperty('plugins');
   });
 
-  it("leaves this repository's Prettier-formatted files unchanged", async () => {
-    const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'oxfmt-check-'));
-    try {
-      const configPath = await writeOxfmtConfig(dir);
-      const result = spawnSync(
-        process.execPath,
-        [oxfmtBin, '-c', configPath, '--check', '--ignore-path', '.lintignore', '.'],
-        { cwd: repoRoot, encoding: 'utf8' },
-      );
-      expect(result.stdout + result.stderr).not.toMatch(/Format issues found/);
-      expect(result.status).toBe(0);
-    } finally {
-      await fs.rm(dir, { force: true, recursive: true });
-    }
+  it("leaves this repository's Prettier-formatted files unchanged with its oxfmt.config.ts", () => {
+    const result = spawnSync(
+      process.execPath,
+      [
+        oxfmtBin,
+        '-c',
+        'oxfmt.config.ts',
+        '--check',
+        '--ignore-path',
+        '.gitignore',
+        '--ignore-path',
+        '.lintignore',
+        '.',
+      ],
+      { cwd: repoRoot, encoding: 'utf8' },
+    );
+    expect(result.stdout + result.stderr).not.toMatch(/Format issues found/);
+    expect(result.status).toBe(0);
   }, 60_000);
 });

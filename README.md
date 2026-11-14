@@ -339,6 +339,6 @@ export default defineConfig(
 
 ## Maintaining
 
-This repository lints itself with both tools: `pnpm eslint`, and `pnpm oxlint` with an `oxlint.config.ts` built from `eslint.config.mjs`.
+This repository checks itself with both sets of tools: `pnpm eslint` and `pnpm oxlint`, with an `oxlint.config.ts` built from `eslint.config.mjs`, and Prettier and `pnpm oxfmt:check`, with an `oxfmt.config.ts` built from `prettier.config.mjs`. The pre-commit hook runs all four on staged files.
 
 After upgrading oxlint, run `pnpm oxlint:update-rules` and then `pnpm oxlint:presets`, so the configs know which rules oxlint implements natively. After changing an ESLint config, run `pnpm oxlint:presets`; a test fails while the presets are out of date.

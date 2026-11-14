@@ -51,6 +51,8 @@
     "clean": "node scripts/clean.mjs",
     "release": "node scripts/release.mjs",
     "test": "vitest run",
+    "oxfmt": "oxfmt --ignore-path .gitignore --ignore-path .lintignore",
+    "oxfmt:check": "oxfmt --check --ignore-path .gitignore --ignore-path .lintignore",
     "oxlint": "oxlint --deny-warnings",
     "oxlint:update-rules": "node scripts/update-oxlint-rules.mjs",
     "oxlint:presets": "node scripts/build-oxlint-presets.mjs"
